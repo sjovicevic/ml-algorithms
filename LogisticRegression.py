@@ -27,6 +27,7 @@ class LogisticRegression():
             self.weights = self.weights - self.alpha * dw
             self.bias = self.bias - self.alpha * db
 
+        print((predictions - y).shape)
 
     def predict(self, X):
         linear_predictions = np.dot(X, self.weights) + self.bias
