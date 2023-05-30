@@ -17,17 +17,27 @@ class LogisticRegression():
         self.weights = np.zeros(n_features)
         self.bias = 0
 
+        if len(set(y)) > 1:
+            self.log_loss_descent(X, y, n_samples, n_features)
+        else:
+            pass
+
+
+
+    def log_loss_descent(self, X, y, n_samples, n_features):
         for _ in range(self.n_iters):
-            linear_predictions = np.dot(X, self.weights) + self.bias
-            predictions = sigmoid(linear_predictions)
+            lin_prediction = np.dot(X, self.weights) + self.bias
+            predictions = sigmoid(lin_prediction)
 
             dw = (1 / n_samples) * np.dot(X.T, (predictions - y))
             db = (1 / n_samples) * np.sum(predictions - y)
 
-            self.weights = self.weights - self.alpha * dw
-            self.bias = self.bias - self.alpha * db
+            self.weights -= self.alpha * dw
+            self.bias -= self.alpha * db
 
-        print((predictions - y).shape)
+    def softmax(self, vector):
+        result = np.exp(vector)
+        return result / np.sum(np.exp(vector))
 
     def predict(self, X):
         linear_predictions = np.dot(X, self.weights) + self.bias
