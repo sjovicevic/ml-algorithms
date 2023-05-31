@@ -1,12 +1,15 @@
 import numpy as np
+import pandas as pd
 
+y = np.array([[1],[1],[1],[1]])
+predictions = np.array([[1, 2], [2, 1], [1, 1], [1, 1]])
+x = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]])
+print(predictions.shape)
+print(y)
+print(y.shape)
+tr =  y - predictions
+print(tr)
+print(tr.shape)
 
-
-def softmax(vector):
-    result = np.exp(vector)
-    return result / np.sum(np.exp(vector))
-
-a = np.array([5,8,2,4,5])
-vector = softmax(a)
-for item in vector:
-    print("%.3f" % (item))
+print('-----------')
+print(np.dot(tr.T, x).shape)
