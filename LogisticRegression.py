@@ -14,6 +14,8 @@ class LogisticRegression():
         self.weights = None
         self.bias = None
         self.J_history = []
+        self.W_history = [] # weight / bias
+        self.B_history = []
 
     def fit(self, X, y, binary=True):
         if binary:
@@ -44,8 +46,8 @@ class LogisticRegression():
         n_samples, n_features = X.shape
         n_classes = 3
 
-        self.weights = np.random.uniform(low=-1, high=1, size=(n_classes, n_features))
-        #self.weights = np.zeros((n_classes, n_features))
+        #self.weights = np.random.uniform(low=-1, high=1, size=(n_classes, n_features), )
+        self.weights = np.zeros((n_classes, n_features))
         self.weights = self.weights.T
         self.bias = 0
 
@@ -59,17 +61,10 @@ class LogisticRegression():
         for _ in range(self.n_iters):
             F_wb = np.dot(X, self.weights) + self.bias
 
-            print(f"F_wb shape: {F_wb.shape}")
-
             softmax = np.exp(F_wb) / np.sum(np.exp(F_wb), axis=1).reshape(n_samples,1)
-            print(np.sum(softmax,axis=1))
-            print(f'{softmax}')
-            loss = (-1 / n_samples) * np.dot(y_one_hot.T, softmax)
-            print(f"Loss value {loss}")
+            loss = (-1 / n_samples) * np.sum(np.sum(np.multiply(y_one_hot, softmax)))
 
-            self.J_history.append(loss)
 
-            print(f"Softmax shape: {softmax.shape}")
 
             dw = (1 / n_samples) * np.dot(X.T, (y_one_hot - softmax))
             db = (1 / n_samples) * np.sum(y_one_hot - softmax)
@@ -77,14 +72,23 @@ class LogisticRegression():
             self.weights -= self.alpha * dw
             self.bias -= self.alpha * db
 
-        #plt.plot(self.J_history, color='b')
-        #plt.show()
+            self.J_history.append(loss)
+            self.W_history.append(self.weights)
+            self.B_history.append(self.bias)
+
+            if _ % 50 == 0:
+                print(f"Loss value {loss}")
+                print(f"Softmax values: {softmax}")
+                print(f"Weights: {self.W_history}")
+                print(f"Biases: {self.B_history}")
+
+        plt.plot(self.J_history, color='b')
+        plt.show()
 
     def predict(self, X):
         n_samples, n_features = X.shape
         F_wb = np.dot(X, self.weights) + self.bias
         softmax = np.exp(F_wb) / np.sum(np.exp(F_wb), axis=1).reshape(n_samples,1)
-        print(softmax.shape)
-        print(softmax)
         indices = np.argmax(softmax, axis=1)
+        print(indices)
         return indices
