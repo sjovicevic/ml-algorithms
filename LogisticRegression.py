@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def sigmoid(z):
     return 1 / (1 + np.exp(-z))
@@ -12,12 +13,16 @@ class LogisticRegression():
         self.n_iters = n_iters
         self.weights = None
         self.bias = None
+        self.J_history = []
 
     def fit(self, X, y, binary=True):
         if binary:
             self.binary_classification(X, y)
         else:
             self.multiclass_classification(X, y)
+
+    def compute_loss(self, X, y_one_hot):
+        return np.dot(y_one_hot, np.log())
 
 
 
@@ -38,51 +43,48 @@ class LogisticRegression():
     def multiclass_classification(self, X, y):
         n_samples, n_features = X.shape
         n_classes = 3
+
         self.weights = np.random.uniform(low=-1, high=1, size=(n_classes, n_features))
+        #self.weights = np.zeros((n_classes, n_features))
         self.weights = self.weights.T
         self.bias = 0
 
-        print(X.shape)
+        y_one_hot = np.array(pd.get_dummies(y, dtype='int8'))
+
+        print(f"X shape: {X.shape}")
+        print(f"Y shape: {y.shape}")
+        print(f"Y one hot shape: {y_one_hot.shape}")
+        print(f"Weights shape: {self.weights.shape}")
+
         for _ in range(self.n_iters):
-            single_prediction = np.dot(X, self.weights) + self.bias
-            print(f"Single prediction shape {single_prediction.shape}")
-            single_prediction_exp = np.exp(single_prediction)
-            print(f"Single prediction exponent shape {single_prediction_exp.shape}")
-            scalar_sum = np.sum(np.exp(single_prediction), axis=1)
-            print(f"Scalar sum value is {scalar_sum}, and shape {scalar_sum.shape}")
-            print('-----------')
-            scalar_sum_correct_shape = scalar_sum.reshape(120,1)
-            print(f"Scalar sum shape now is {scalar_sum_correct_shape.shape}")
+            F_wb = np.dot(X, self.weights) + self.bias
 
-            predictions = single_prediction_exp / scalar_sum_correct_shape # moj kod
+            print(f"F_wb shape: {F_wb.shape}")
 
-            print(f"Predictions shape {predictions.shape} and predictions values {predictions}")
-            print(f"Y shape {y.shape}, and Y values {y}")
+            softmax = np.exp(F_wb) / np.sum(np.exp(F_wb), axis=1).reshape(n_samples,1)
+            print(np.sum(softmax,axis=1))
+            print(f'{softmax}')
+            loss = (-1 / n_samples) * np.dot(y_one_hot.T, softmax)
+            print(f"Loss value {loss}")
 
-            y = y.reshape(120, 1)
-            result = y - predictions
+            self.J_history.append(loss)
 
-            print(f"Result shape is {result.shape}, and result value {result}")
-            print(f"X shape : {X.shape}")
+            print(f"Softmax shape: {softmax.shape}")
 
-            dw = (1 / n_samples) * np.dot(result.T, X)
-            db = (1 / n_samples) * np.sum(result)
-
-            print(f"Weights shape: {self.weights.shape}")
-            # print(f"Alpha shape: {self.alpha.shape}")
-            print(f"Dw shape: { dw.shape }")
-
-            dw = dw.T
+            dw = (1 / n_samples) * np.dot(X.T, (y_one_hot - softmax))
+            db = (1 / n_samples) * np.sum(y_one_hot - softmax)
 
             self.weights -= self.alpha * dw
             self.bias -= self.alpha * db
 
-
-
-
+        #plt.plot(self.J_history, color='b')
+        #plt.show()
 
     def predict(self, X):
-        linear_predictions = np.dot(X, self.weights) + self.bias
-        y_pred = sigmoid(linear_predictions)
-        class_pred = [0 if y<=0.5 else 1 for y in y_pred]
-        return class_pred
+        n_samples, n_features = X.shape
+        F_wb = np.dot(X, self.weights) + self.bias
+        softmax = np.exp(F_wb) / np.sum(np.exp(F_wb), axis=1).reshape(n_samples,1)
+        print(softmax.shape)
+        print(softmax)
+        indices = np.argmax(softmax, axis=1)
+        return indices
