@@ -62,9 +62,8 @@ class LogisticRegression():
             print(f"F_wb shape: {F_wb.shape}")
 
             softmax = np.exp(F_wb) / np.sum(np.exp(F_wb), axis=1).reshape(n_samples,1)
-            print(np.sum(softmax,axis=1))
             print(f'{softmax}')
-            loss = (-1 / n_samples) * np.dot(y_one_hot.T, softmax)
+            loss = np.sum((-1 / n_samples) * (np.dot(y_one_hot.T, softmax)))
             print(f"Loss value {loss}")
 
             self.J_history.append(loss)
@@ -77,8 +76,8 @@ class LogisticRegression():
             self.weights -= self.alpha * dw
             self.bias -= self.alpha * db
 
-        #plt.plot(self.J_history, color='b')
-        #plt.show()
+        plt.plot(self.J_history, color='b')
+        plt.show()
 
     def predict(self, X):
         n_samples, n_features = X.shape

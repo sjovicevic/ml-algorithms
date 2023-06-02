@@ -14,7 +14,7 @@ iris = datasets.load_iris()
 X, y = iris.data, iris.target
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
-clf = LogisticRegression(alpha=0.1, n_iters=1000)
+clf = LogisticRegression(alpha=0.01, n_iters=100)
 clf.fit(X_train, y_train, binary=False)
 y_pred = clf.predict(X_test)
 
