@@ -2,29 +2,25 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 def sigmoid(z):
     return 1 / (1 + np.exp(-z))
 
 
-class LogisticRegression():
+class LogisticRegression:
 
-    def __init__(self, alpha = 0.001, n_iters = 1000):
+    def __init__(self, alpha=0.001, n_iters=1000):
         self.alpha = alpha
         self.n_iters = n_iters
         self.weights = None
         self.bias = None
         self.J_history = []
 
-    def fit(self, X, y, binary=True):
+    def fit(self, x, y, binary=True):
         if binary:
-            self.binary_classification(X, y)
+            self.binary_classification(x, y)
         else:
-            self.multiclass_classification(X, y)
-
-    def compute_loss(self, X, y_one_hot):
-        return np.dot(y_one_hot, np.log())
-
-
+            self.multiclass_classification(x, y)
 
     def binary_classification(self, X, y):
         n_samples, n_features = X.shape
@@ -42,14 +38,13 @@ class LogisticRegression():
 
     def multiclass_classification(self, X, y):
         n_samples, n_features = X.shape
-        n_classes = 3
-
-        self.weights = np.random.uniform(low=-1, high=1, size=(n_classes, n_features))
-        #self.weights = np.zeros((n_classes, n_features))
-        self.weights = self.weights.T
-        self.bias = 0
-
         y_one_hot = np.array(pd.get_dummies(y, dtype='int8'))
+        n_classes = len(y_one_hot[0])
+
+        print(X)
+
+        self.weights = np.random.uniform(low=-1, high=1, size=(n_classes, n_features)).T
+        self.bias = 0
 
         print(f"X shape: {X.shape}")
         print(f"Y shape: {y.shape}")
@@ -57,33 +52,30 @@ class LogisticRegression():
         print(f"Weights shape: {self.weights.shape}")
 
         for _ in range(self.n_iters):
-            F_wb = np.dot(X, self.weights) + self.bias
+            f_wb = np.dot(X, self.weights) + self.bias
 
-            print(f"F_wb shape: {F_wb.shape}")
+            softmax = np.exp(f_wb) / np.sum(np.exp(f_wb), axis=1).reshape(n_samples, 1)
 
-            softmax = np.exp(F_wb) / np.sum(np.exp(F_wb), axis=1).reshape(n_samples,1)
-            print(f'{softmax}')
-            loss = np.sum((-1 / n_samples) * (np.dot(y_one_hot.T, softmax)))
-            print(f"Loss value {loss}")
-
-            self.J_history.append(loss)
-
-            print(f"Softmax shape: {softmax.shape}")
+            loss = (-1 / n_samples) * (np.sum(np.multiply(y_one_hot, np.log(softmax))))
 
             dw = (1 / n_samples) * np.dot(X.T, (y_one_hot - softmax))
             db = (1 / n_samples) * np.sum(y_one_hot - softmax)
 
-            self.weights -= self.alpha * dw
-            self.bias -= self.alpha * db
+            self.weights += self.alpha * dw
+            self.bias += self.alpha * db
+
+            self.J_history.append(loss)
+
+            if _ % 100 == 0:
+                print(f"Loss value {loss}")
 
         plt.plot(self.J_history, color='b')
         plt.show()
 
     def predict(self, X):
         n_samples, n_features = X.shape
-        F_wb = np.dot(X, self.weights) + self.bias
-        softmax = np.exp(F_wb) / np.sum(np.exp(F_wb), axis=1).reshape(n_samples,1)
-        print(softmax.shape)
-        print(softmax)
+        f_wb = np.dot(X, self.weights) + self.bias
+        softmax = np.exp(f_wb) / np.sum(np.exp(f_wb), axis=1).reshape(n_samples, 1)
         indices = np.argmax(softmax, axis=1)
+        print(indices)
         return indices
