@@ -99,7 +99,6 @@ class LogisticRegression:
         :return:
         """
         softmax = compute_softmax(f_wb)
-        print(softmax)
         loss = (-1 / n_samples) * np.sum(np.multiply(self.y_one_hot, np.log(softmax)))
         self.J_history.append(loss)
         dw = (-1 / n_samples) * np.dot(X.T, (self.y_one_hot - softmax))
