@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from time import sleep
+import time
 
 
 def compute_sigmoid(f_wb):
@@ -60,7 +60,12 @@ class LogisticRegression:
             n_classes = len(self.y_one_hot[0])
             self.weights = np.random.uniform(low=-1, high=1, size=(n_features + 1, n_classes))
 
+
         X = transform_bias(X)
+
+        print(f'X shape: {X.shape}')
+        print(f'Y shape: {y.shape}')
+        print(f'weights shape: {self.weights.shape}')
         for _ in tqdm(range(self.n_iters), desc="Training progress: "):
             f_wb = np.dot(X, self.weights)
 
@@ -70,8 +75,6 @@ class LogisticRegression:
                 dw = self.multiclass_classification(X, y, f_wb, n_samples)
 
             self.weights -= self.alpha * dw
-
-            sleep(0.001)
 
         print(f'Loss value: [{self.loss}]')
 
@@ -85,6 +88,8 @@ class LogisticRegression:
         :return: Derivative of weights.
         """
         predictions = compute_sigmoid(f_wb)
+        self.loss = (-1 / n_samples) * (np.dot(y.T, predictions) + np.dot((1 - y).T, np.log(1 - predictions)))
+        self.J_history.append(self.loss)
         dw = (1 / n_samples) * np.dot(X.T, (predictions - y))
 
         return dw
@@ -99,8 +104,8 @@ class LogisticRegression:
         :return:
         """
         softmax = compute_softmax(f_wb)
-        loss = (-1 / n_samples) * np.sum(np.multiply(self.y_one_hot, np.log(softmax)))
-        self.J_history.append(loss)
+        self.loss = (-1 / n_samples) * np.sum(np.multiply(self.y_one_hot, np.log(softmax)))
+        self.J_history.append(self.loss)
         dw = (-1 / n_samples) * np.dot(X.T, (self.y_one_hot - softmax))
 
         return dw

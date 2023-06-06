@@ -18,7 +18,8 @@ def accuracy(y_p, y_t):
     return np.sum(y_p == y_t) / len(y_t)
 
 
-ldr = DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
+#ldr = DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
+ldr = DatasetLoader(dataset=datasets.load_breast_cancer(), multiclass_flag=False)
 multiclass, X, y = ldr.run()
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
