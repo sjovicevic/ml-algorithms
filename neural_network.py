@@ -78,5 +78,5 @@ activation2.forward(dense2.output)
 
 loss = loss_function.calculate(activation2.output, y)
 print(loss)
-#plt.scatter(X[:, 0], X[:, 1], c=y, cmap='Dark2')
-#plt.show()
+plt.scatter(X[:, 0], X[:, 1], c=y, cmap='Dark2')
+plt.show()
