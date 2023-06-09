@@ -15,6 +15,10 @@ class LayerDense:
     def forward(self, inputs):
         self.output = np.dot(inputs, self.weights) + self.biases
 
+    def backward(self, dvalues):
+        self.dweights = np.dot(self.input.T, dvalues)
+        self.dbiases = np.sum(dvalues, axis=0, keepdims=True)
+        self.dinputs = np.dot(dvalues, self.weights.T)
 
 class ActivationReLU:
 
@@ -23,6 +27,10 @@ class ActivationReLU:
 
     def forward(self, inputs):
         self.output = np.maximum(0, inputs)
+
+    def backward(self, dvalues):
+        self.dinputs = dvalues.copy()
+        self.dinputs[self.inputs <= 0] = 0
 
 
 class ActivationSoftmax:
@@ -34,6 +42,16 @@ class ActivationSoftmax:
         exponents = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
         self.output = exponents / np.sum(exponents, axis=1, keepdims=True)
 
+    def backward(self, dvalues):
+        self.dinputs = np.empty_like(dvalues)
+
+        for index, (single_output, single_dvalues) in \
+            enumerate(zip(self.output, dvalues)):
+
+            single_output = single_output.reshape(-1, 1)
+            jacobian_matrix = np.diagflat(single_output) - \
+                              np.dot(single_output, single_output.T)
+            self.dinputs[index] = np.dot(jacobian_matrix, single_dvalues)
 
 class Loss:
 
@@ -65,6 +83,16 @@ class LossCategoricalCrossEntropy(Loss):
 
         negative_log = -np.log(correct_confidence)
         return negative_log
+
+    def backward(self, dvalues, y_true):
+        samples = len(dvalues)
+        labels = len(dvalues[0])
+
+        if len(y_true.shape) == 1:
+            y_true = np.eye(labels)[y_true]
+
+        self.dinputs = -y_true / dvalues
+        self.dinputs = self.dinputs / samples
 
 
 nnfs.init()
