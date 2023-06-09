@@ -26,4 +26,14 @@ elif len(class_targets.shape) == 2:
 
 neg_log = -np.log(correct_confidences)
 average_mean = np.mean(neg_log)
-print(average_mean)
+
+softmax_outputs = np.array([[0.7, 0.2, 0.1],
+                            [0.5, 0.1, 0.4],
+                            [0.02, 0.9, 0.08]])
+
+predictions = np.argmax(softmax_outputs, axis=1)
+class_targets = np.array([0, 1, 1])
+
+accuracy = np.mean(predictions == class_targets)
+
+print(accuracy)

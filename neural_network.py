@@ -42,22 +42,26 @@ class Loss:
 
     def calculate(self, output, y_true):
         samples_losses = self.forward(output, y_true)
-        data_loss = np.mean(samples_losses)
-        return data_loss
+        try:
+            # noinspection PyTypeChecker
+            data_loss = np.mean(samples_losses)
+            return data_loss
+        except ValueError:
+            print("Union ndarray expected, got None instead.")
 
 
 class LossCategoricalCrossEntropy(Loss):
 
-    def forward(self, y_pred, y_true):
+    def forward(self, y_prediction, y_true):
 
-        samples = len(y_pred)
-        y_pred_clipped = np.clip(y_pred, 1e-7, 1 - 1e-7)
+        samples = len(y_prediction)
+        y_prediction_clipped = np.clip(y_prediction, 1e-7, 1 - 1e-7)
 
         correct_confidence = numpy.ndarray
         if len(y_true.shape) == 1:
-            correct_confidence = y_pred_clipped[(range(samples), y_true)]
+            correct_confidence = y_prediction_clipped[(range(samples), y_true)]
         elif len(y_true.shape) == 2:
-            correct_confidence = np.sum(y_pred_clipped * y_true, axis=1)
+            correct_confidence = np.sum(y_prediction_clipped * y_true, axis=1)
 
         negative_log = -np.log(correct_confidence)
         return negative_log
@@ -78,5 +82,12 @@ activation2.forward(dense2.output)
 
 loss = loss_function.calculate(activation2.output, y)
 print(loss)
+
+predictions = np.argmax(activation2.output, axis=1)
+
+if len(y.shape) == 2:
+    y = np.argmax(y, axis=1)
+accuracy = np.mean(predictions == y)
+print(f'Accuracy: {accuracy}')
 plt.scatter(X[:, 0], X[:, 1], c=y, cmap='Dark2')
 plt.show()
