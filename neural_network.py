@@ -1,4 +1,3 @@
-import numpy
 import numpy as np
 import matplotlib.pyplot as plt
 import nnfs
@@ -13,12 +12,14 @@ class LayerDense:
         self.output = None
 
     def forward(self, inputs):
+        self.inputs = inputs
         self.output = np.dot(inputs, self.weights) + self.biases
 
     def backward(self, dvalues):
-        self.dweights = np.dot(self.input.T, dvalues)
+        self.dweights = np.dot(self.inputs.T, dvalues)
         self.dbiases = np.sum(dvalues, axis=0, keepdims=True)
         self.dinputs = np.dot(dvalues, self.weights.T)
+
 
 class ActivationReLU:
 
@@ -26,6 +27,7 @@ class ActivationReLU:
         self.output = None
 
     def forward(self, inputs):
+        self.inputs = inputs
         self.output = np.maximum(0, inputs)
 
     def backward(self, dvalues):
@@ -39,6 +41,7 @@ class ActivationSoftmax:
         self.output = None
 
     def forward(self, inputs):
+        self.inputs = inputs
         exponents = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
         self.output = exponents / np.sum(exponents, axis=1, keepdims=True)
 
@@ -93,6 +96,9 @@ class LossCategoricalCrossEntropy(Loss):
 
         self.dinputs = -y_true / dvalues
         self.dinputs = self.dinputs / samples
+
+
+
 
 
 nnfs.init()
