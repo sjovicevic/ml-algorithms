@@ -4,6 +4,7 @@ import pandas as pd
 from tqdm import tqdm
 import math
 
+
 def compute_sigmoid(f_wb):
     """
     Sigmoid function, mathematical function having a characteristic "S"-shaped curve or sigmoid curve.
