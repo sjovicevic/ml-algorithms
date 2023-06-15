@@ -60,7 +60,6 @@ class LogisticRegression:
             n_classes = len(self.y_one_hot[0])
             self.weights = np.random.uniform(low=-1, high=1, size=(n_features + 1, n_classes))
 
-
         X = transform_bias(X)
 
         print(f'X shape: {X.shape}')
@@ -72,7 +71,7 @@ class LogisticRegression:
             if not multiclass:
                 dw = self.binary_classification(X, y, f_wb, n_samples)
             else:
-                dw = self.multiclass_classification(X, y, f_wb, n_samples)
+                dw = self.multiclass_classification(X, f_wb, n_samples)
 
             self.weights -= self.alpha * dw
 
@@ -94,7 +93,7 @@ class LogisticRegression:
 
         return dw
 
-    def multiclass_classification(self, X, y, f_wb, n_samples):
+    def multiclass_classification(self, X, f_wb, n_samples):
         """
         Modular implementation of logistic regression with multiclass output.
         :param X: X_train
@@ -104,6 +103,7 @@ class LogisticRegression:
         :return:
         """
         softmax = compute_softmax(f_wb)
+        print(f"softmax{softmax}")
         self.loss = (-1 / n_samples) * np.sum(np.multiply(self.y_one_hot, np.log(softmax)))
         self.J_history.append(self.loss)
         dw = (-1 / n_samples) * np.dot(X.T, (self.y_one_hot - softmax))
