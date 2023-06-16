@@ -2,25 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import utils
 import math
-
-
-def compute_sigmoid(f_wb):
-    """
-    Sigmoid function, mathematical function having a characteristic "S"-shaped curve or sigmoid curve.
-    Function that maps input values to a value between 0 and 1.
-    :param f_wb: function f_wb result
-    :return: float between 0 and 1
-    """
-    return 1 / (1 + np.exp(-f_wb))
-
-
-def compute_softmax(func_value):
-    """
-    Softmax function converts a vector of K real numbers into a probability distribution of K possible outcomes.
-    :return: A matrix with shape (n_samples, n_classes) that represents softmax value for every element in every class.
-    """
-    return np.exp(func_value) / np.sum(np.exp(func_value), axis=1, keepdims=True)
 
 
 def transform_bias(a):
@@ -86,7 +69,7 @@ class LogisticRegression:
         :param n_samples: Number of samples in the dataset.
         :return: Derivative of weights.
         """
-        predictions = compute_sigmoid(f_wb)
+        predictions = utils.sigmoid(f_wb, derivative=False)
         self.loss = (-1 / n_samples) * (np.dot(y.T, predictions) + np.dot((1 - y).T, np.log(1 - predictions)))
         self.J_history.append(self.loss)
         dw = (1 / n_samples) * np.dot(X.T, (predictions - y))
@@ -102,7 +85,7 @@ class LogisticRegression:
         :param n_samples: Number of samples in the dataset.
         :return:
         """
-        softmax = compute_softmax(f_wb)
+        softmax = utils.softmax(f_wb, derivative=False)
         print(f"softmax{softmax}")
         self.loss = (-1 / n_samples) * np.sum(np.multiply(self.y_one_hot, np.log(softmax)))
         self.J_history.append(self.loss)
@@ -122,10 +105,10 @@ class LogisticRegression:
         f_wb = np.dot(X, self.weights)
 
         if not multiclass:
-            predictions = compute_sigmoid(f_wb)
+            predictions = utils.sigmoid(f_wb, derivative=False)
             return predictions
         else:
-            softmax = compute_softmax(f_wb)
+            softmax = utils.softmax(f_wb, derivative=False)
             indices = np.argmax(softmax, axis=1)
             return indices
 

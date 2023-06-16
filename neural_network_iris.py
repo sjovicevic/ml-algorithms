@@ -35,7 +35,8 @@ class Layer:
             raise Exception("Loss can be calculated only for output layer.")
 
     def back(self, expected, output):
-        self.output_one_hot = np.array(pd.get_dummies(output, dtype='int8'))
+        output_one_hot = np.array(pd.get_dummies(output, dtype='int8'))
+
 
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)

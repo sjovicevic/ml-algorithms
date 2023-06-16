@@ -10,7 +10,9 @@ class DatasetLoader:
         return self.multiclass_flag, self.dataset.data, self.dataset.target
 
 
-def softmax(z):
+def softmax(z, derivative=False):
+    if derivative:
+        return np.diagflat(z) - np.dot(z, z.T)
     return np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)
 
 
