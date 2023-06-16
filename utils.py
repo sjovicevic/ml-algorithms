@@ -26,8 +26,8 @@ def relu(z, derivative=False):
 
 def sigmoid(z, derivative=False):
     if derivative:
-        return (np.exp(-z)) / ((np.exp(-z) + 1) ** 2)
-    return 1 / (1 - np.exp(-z))
+        return np.multiply(z, 1-z)
+    return 1 / (1 + np.exp(-z))
 
 
 def accuracy(y_p, y_t):
