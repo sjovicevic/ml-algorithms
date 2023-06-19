@@ -34,7 +34,7 @@ class Layer:
 
         dz = output - expected.T
         self.weights = (1 / self.n_samples) * np.matmul(dz, self.cache['Activation'].T)
-        db = (1 / self.n_samples) * np.sum(dz, axis=1, keepdims=True)
+        self.bias = (1 / self.n_samples) * np.sum(dz, axis=1, keepdims=True)
 
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
