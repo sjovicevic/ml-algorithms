@@ -1,5 +1,5 @@
 import numpy as np
-
+import pandas as pd
 
 class DatasetLoader:
     def __init__(self, dataset, multiclass_flag=False):
@@ -13,14 +13,19 @@ class DatasetLoader:
 def softmax(z, derivative=False):
     if derivative:
         return np.diagflat(z) - np.dot(z, z.T)
-    return np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)
+    else:
+        return np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)
 
-
-def cross_entropy_loss(y_one_hot, n_samples, softmax, derivative=False):
+def tanh(z, derivative=False):
     if derivative:
         pass
-        # derivative implementation
-    return (-1 / n_samples) * np.sum(np.multiply(y_one_hot, np.log(softmax)))
+    else:
+        return (np.exp(2*z) - 1) / (np.exp(2*z) + 1)
+
+
+def loss(a, output, n_samples):
+    y_one_hot = np.array(pd.get_dummies(output, dtype='int8'))
+    return (-1 / n_samples) * np.sum(np.multiply(y_one_hot, np.log(a)))
 
 
 def relu(z, derivative=False):
