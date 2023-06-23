@@ -52,12 +52,15 @@ class Neuron:
     def backward(self, next_activation, next_weights, previous_derivative):
         da_dz = self.derivative_f(self.memory['Z'])
         current_derivative = previous_derivative * next_activation * da_dz
-        print(f"Current derivative shape: {current_derivative.shape}")
-        print(f"da_dz shape: {da_dz.shape}")
-        print(f"next weights shape: {next_weights.shape}")
+        #print(f"Current derivative shape: {current_derivative.shape}")
+        #print(f"da_dz shape: {da_dz.shape}")
+        #print(f"next weights shape: {next_weights.shape}")
+        print(f"Weights value before: {self.weights}")
         delta = np.dot(next_weights.T, da_dz.T) * previous_derivative
-        print(f"Delta shape: {delta.shape}")
-        print(f"Weights shape: {self.weights.shape}")
+        #print(f"Delta shape: {delta.shape}")
+        #print(f"Weights shape: {self.weights.shape}")
+        n_samples = delta.shape[1]
+        delta = np.sum(delta, axis=1, keepdims=True) / n_samples
         self.weights += 0.01 * delta
         return self.weights, delta
 
@@ -74,5 +77,6 @@ neuron1 = Neuron(a.shape[1], tanh, tanh_derivative, output_neuron=False)
 neuron1_output = neuron1.forward(a)
 weights, delta = neuron1.backward(neuron1_output, np.array([[0.01, 0.02, 0.03, 0.04]]), 1)
 
-print(f'Weights: {weights}')
+
+print(f'Weights value after: {weights}')
 print(f'Delta: {delta}')
