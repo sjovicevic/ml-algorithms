@@ -89,6 +89,7 @@ class LogisticRegression:
         self.loss = (-1 / n_samples) * np.sum(np.multiply(self.y_one_hot, np.log(softmax)))
         self.J_history.append(self.loss)
         dw = (-1 / n_samples) * np.dot(X.T, (self.y_one_hot - softmax))
+        print(f'dw shape {dw.shape}')
 
         return dw
 

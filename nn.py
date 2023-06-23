@@ -5,6 +5,14 @@ import pandas as pd
 import utils
 
 
+def softmax(z):
+    return np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)
+
+
+def softmax_derivative(z):
+    return np.diagflat(z) - np.dot(z, z.T)
+
+
 def tanh(z):
     return (np.exp(2*z) - 1) / (np.exp(2*z) + 1)
 
@@ -32,22 +40,41 @@ class Neuron:
         self.memory['Z'] = np.dot(inputs, self.weights) + self.bias
         self.memory['Activation'] = self.activation_f(self.memory['Z'])
 
-        if self.output_neuron:
-            loss = utils.loss(self.memory['Activation'], y_train, inputs.shape[0])
-            print(loss)
+        print(f'Z shape: {self.memory["Z"].shape}')
+        print(f'Activation shape: {self.memory["Activation"].shape}')
+
+        # if self.output_neuron:
+        #     loss = utils.loss(self.memory['Activation'], y_train, inputs.shape[0])
+        #     print(loss)
+
         return self.memory['Activation']
 
-    def backward(self, next_activation, previous_derivative):
+    def backward(self, next_activation, next_weights, previous_derivative):
         da_dz = self.derivative_f(self.memory['Z'])
-        current_derivative = np.multiply(previous_derivative, da_dz)
-        self.weights += 0.01 * current_derivative
-        return self.weights
+        current_derivative = previous_derivative * next_activation * da_dz
+        print(f"Current derivative shape: {current_derivative.shape}")
+        print(f"da_dz shape: {da_dz.shape}")
+        print(f"next weights shape: {next_weights.shape}")
+        delta = np.matmul(next_weights.T, da_dz) * previous_derivative
+        print(f"Delta shape: {delta.shape}")
+        print(f"Weights shape: {self.weights.shape}")
+        self.weights += 0.01 * delta
+        return self.weights, delta
 
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
 multiclass, X, y = ldr.run()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
-neuron1 = Neuron(X_train.shape[1], tanh, tanh_derivative, output_neuron=True)
-neuron1_output = neuron1.forward(X_train)
-print(neuron1.backward(1,1))
+a = np.array([[0.1, 0.3, 0.1, 0.13],
+              [0.45, 2.34, 1.2, 5.5],
+              [0.87, 2.35, 2.21, 8.9]])
+
+neuron1 = Neuron(a.shape[1], tanh, tanh_derivative, output_neuron=False)
+neuron1_output = neuron1.forward(a)
+weights, delta = neuron1.backward(neuron1_output, np.array([[0.01, 0.02, 0.03, 0.04],
+                                                 [0.01, 0.02, 0.03, 0.04],
+                                                 [0.01, 0.02, 0.03, 0.04]]), 1)
+
+print(f'Weights: {weights}')
+print(f'Delta: {delta}')

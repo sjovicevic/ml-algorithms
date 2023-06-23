@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+
 class DatasetLoader:
     def __init__(self, dataset, multiclass_flag=False):
         self.dataset = dataset
@@ -15,6 +16,7 @@ def softmax(z, derivative=False):
         return np.diagflat(z) - np.dot(z, z.T)
     else:
         return np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)
+
 
 def tanh(z, derivative=False):
     if derivative:
