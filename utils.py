@@ -11,47 +11,52 @@ class DatasetLoader:
         return self.multiclass_flag, self.dataset.data, self.dataset.target
 
 
-def softmax(z, derivative=False):
-    if derivative:
-        return np.diagflat(z) - np.dot(z, z.T)
-    else:
-        return np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)
+def softmax(z):
+    return np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)
 
 
-def tanh(z, derivative=False):
-    if derivative:
-        pass
-    else:
-        return (np.exp(2*z) - 1) / (np.exp(2*z) + 1)
+def softmax_derivative(z):
+    return np.diagflat(z) - np.dot(z, z.T)
 
 
-def loss(a, output, n_samples):
-    y_one_hot = np.array(pd.get_dummies(output, dtype='int8'))
-    return (-1 / n_samples) * np.sum(np.multiply(y_one_hot, np.log(a)))
+def tanh(z):
+    return (np.exp(2*z) - 1) / (np.exp(2*z) + 1)
 
 
-def relu(z, derivative=False):
-    if derivative:
-        z = np.where(z < 0, 0, z)
-        z = np.where(z >= 0, 1, z)
-        return z
+def tanh_derivative(z):
+    return 1 - tanh(z)**2
+
+
+def relu(z):
     return np.maximum(0, z)
 
 
-def sigmoid(z, derivative=False):
-    if derivative:
-        return np.multiply(z, 1-z)
+def relu_derivative(z):
+    z = np.where(z < 0, 0, z)
+    z = np.where(z >= 0, 1, z)
+    return z
+
+
+def sigmoid(z):
     return 1 / (1 + np.exp(-z))
+
+
+def sigmoid_derivative(z):
+    return np.multiply(z, 1 - z)
+
+
+def loss(a, y, n_samples):
+    y_one_hot = np.array(pd.get_dummies(y, dtype='int8'))
+    return (-1 / n_samples) * np.sum(np.multiply(y_one_hot, np.log(a)))
 
 
 def find_max_output(output):
     m, index = output[0], 0
     for i in range(1, len(output)):
-        if(output[i] > m):
+        if output[i] > m:
             m, index = output[i], i
     return index
 
 
 def accuracy(y_p, y_t):
     return np.sum(y_p == y_t) / len(y_t)
-
