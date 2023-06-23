@@ -55,7 +55,7 @@ class Neuron:
         print(f"Current derivative shape: {current_derivative.shape}")
         print(f"da_dz shape: {da_dz.shape}")
         print(f"next weights shape: {next_weights.shape}")
-        delta = np.matmul(next_weights.T, da_dz) * previous_derivative
+        delta = np.dot(next_weights.T, da_dz.T) * previous_derivative
         print(f"Delta shape: {delta.shape}")
         print(f"Weights shape: {self.weights.shape}")
         self.weights += 0.01 * delta
@@ -72,9 +72,7 @@ a = np.array([[0.1, 0.3, 0.1, 0.13],
 
 neuron1 = Neuron(a.shape[1], tanh, tanh_derivative, output_neuron=False)
 neuron1_output = neuron1.forward(a)
-weights, delta = neuron1.backward(neuron1_output, np.array([[0.01, 0.02, 0.03, 0.04],
-                                                 [0.01, 0.02, 0.03, 0.04],
-                                                 [0.01, 0.02, 0.03, 0.04]]), 1)
+weights, delta = neuron1.backward(neuron1_output, np.array([[0.01, 0.02, 0.03, 0.04]]), 1)
 
 print(f'Weights: {weights}')
 print(f'Delta: {delta}')
