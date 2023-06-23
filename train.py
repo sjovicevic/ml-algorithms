@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn import datasets
-from logistic_regression import LogisticRegression
+from src.logistic_regression import LogisticRegression
 import utils
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
