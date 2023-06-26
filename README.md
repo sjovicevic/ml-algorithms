@@ -1,12 +1,13 @@
-# Rešavanje klasifikacionih problema
+# Solving classification problems
 ___
-Cilj projekta je rešavanje problema klasifikacije [Iris dataset](https://scikit-learn.org/stable/auto_examples/datasets/plot_iris_dataset.html) algoritmima koji su implementirani od nule, bez korišćenja gotovih biblioteka poput scikit-learn, TensorFlow i sl.
+Purpose of this project is solving basic machine learning classification problems without using any third-party libraries or frameworks (Tensorflow, PyTorch etc). Dataset I used was [Iris dataset](https://scikit-learn.org/stable/auto_examples/datasets/plot_iris_dataset.html), you can visit this page to get brief introduction of this simple dataset.
 ___
-## Logistička regresija
-Kod pristupa rešavanja problema logističkom regresijom, postoje dve implementacije u zavisnosti od toga da li se radi o dvoklasnom ili više klasnom modelu.
-Nakon 1000 epoha i stopom učenja 0.01, dobija se tačnost algoritma od oko 96%.
+## Logistic Regression
+
+Solving this problem requires two ways of implementation, based on output (if its binary or multiclass classification). After 1000 epochs, and learning rate of 0.01, algorithm accuracy is about 96%.
 
 ![Grafik loss funkcije](docs/assets/Plot1.png)
 ___
-## Neuralna mreža
-Implementirana modularnih pristupom tako što je broj skrivenih slojeva i neurona unutar slojeva proizvoljan, kao i izbor korišćenja aktivacionih funkcija.
+## Neural Network
+
+To be continued...
