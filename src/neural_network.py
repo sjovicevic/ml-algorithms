@@ -32,7 +32,7 @@ class Neuron:
         current_derivative = np.dot(next_activation.T, da_dz) * previous_derivative
         delta = np.dot(next_weights.T, da_dz.T) * previous_derivative
         self.weights += 0.01 * current_derivative
-        return self.weights, delta
+        return self.weights, delta.T
 
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
