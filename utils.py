@@ -19,6 +19,14 @@ def softmax_derivative(z):
     return np.diagflat(z) - np.dot(z, z.T)
 
 
+def categorical_cross_entropy_loss(y_hat, y=None):
+    return -np.multiply(y, np.log(y_hat))
+
+
+def loss_derivative(y, y_hat):
+    return -np.divide(y, y_hat)
+
+
 def tanh(z):
     return (np.exp(2*z) - 1) / (np.exp(2*z) + 1)
 
@@ -45,8 +53,12 @@ def sigmoid_derivative(z):
     return np.multiply(z, 1 - z)
 
 
+def get_one_hot(z):
+    return np.array(pd.get_dummies(z, dtype='int8'))
+
+
 def loss(a, y, n_samples):
-    y_one_hot = np.array(pd.get_dummies(y, dtype='int8'))
+    y_one_hot = get_one_hot(y)
     return (-1 / n_samples) * np.sum(np.multiply(y_one_hot, np.log(a)))
 
 
