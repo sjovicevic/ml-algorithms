@@ -108,9 +108,7 @@ class NeuralNetwork:
         return optimizers
 
     def forward(self):
-
         self.cache['X'] = self.X
-
         for index in range(len(self.hidden_layer)):
             if index == 0:
                 self.cache[f'Z{index}'] = np.dot(self.parameters[f'W{index}'], self.cache[f'X'].T) + self.parameters[f'b{index}']
