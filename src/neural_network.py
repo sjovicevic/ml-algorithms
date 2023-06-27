@@ -7,19 +7,26 @@ import utils
 
 class Neuron:
 
-    def __init__(self, input, n_neurons, activation_f, derivative_f, _output_neuron=False, y=None):
-        self.input = input
-        self.n_features = input.shape[1]
+    def __init__(self,
+                 data,
+                 n_neurons,
+                 activation_f,
+                 derivative_f,
+                 output_neuron=False,
+                 y=None):
+
+        self.input = data
         self.n_neurons = n_neurons
-        self.y = y
-        self.weights = np.random.uniform(low=-1, high=1, size=(self.n_features, self.n_neurons))
-        self.bias = 0
         self.activation_f = activation_f
         self.derivative_f = derivative_f
+        self.output_neuron = output_neuron
+        self.y = y
         self.memory = {}
-        self.output_neuron = _output_neuron
+        self.bias = 0
+        self.weights = np.random.uniform(low=-1, high=1, size=(self.n_features, self.n_neurons))
+        self.n_features = input.shape[1]
 
-        if y is not None and _output_neuron:
+        if y is not None and output_neuron:
             y_one_hot = utils.get_one_hot(y)
             if len(y_one_hot[0]) != n_neurons:
                 raise Exception("Number of neurons must be equal to the number of the output classes.")
@@ -51,6 +58,10 @@ class Neuron:
 
             return self.weights, delta.T, self.bias
 
+    def train(self, epochs, learning_rate):
+        pass
+
+
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
 multiclass, X, y = ldr.run()
@@ -60,9 +71,13 @@ a = np.array([[0.1, 0.3, 0.1, 0.13],
               [0.45, 2.34, 1.2, 5.5],
               [0.87, 2.35, 2.21, 8.9]])
 
+
 neuron1 = Neuron(X_train, 2, utils.tanh, utils.tanh_derivative, _output_neuron=False)
-neuron2 = Neuron(neuron1.forward(), 3, utils.softmax, utils.loss_derivative, _output_neuron=True, y=y_train)
-neuron2_output = neuron2.forward()
+neuron2 = Neuron(neuron1.forward(), 10, utils.tanh, utils.tanh_derivative, _output_neuron=False, y=None)
+neuron3 = Neuron(neuron2.forward(), 3, utils.softmax, utils.loss_derivative, _output_neuron=True, y=y_train)
+
+print(neuron3.forward())
+
 
 
 
