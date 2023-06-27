@@ -3,9 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn import datasets
 import pandas as pd
 import utils
-from tqdm import tqdm
-
-
+'''
 class Neuron:
 
     def __init__(self,
@@ -59,6 +57,8 @@ class Neuron:
 
             return self.weights, delta.T, self.bias
 
+'''
+
 
 class NeuralNetwork:
 
@@ -75,18 +75,19 @@ class NeuralNetwork:
         self.layers = layers
         self.activation = activation
         self.parameters = self.initialize()
+        self.cache = {}
+        self.input_layer = self.layers[0]
+        self.hidden_layer = self.layers[1:-1:1]
+        self.output_layer = self.layers[-1]
 
     def initialize(self):
-
-        input_layer = self.layers[0]
-        hidden_layer = self.layers[1:-1:1]
-        output_layer = self.layers[-1]
 
         parameters = {}
 
         for layer, index in zip(self.layers, range(len(self.layers))):
             if index == 0:
                 parameters[f'W{index}'] = np.random.uniform(low=-1, high=1, size=(self.n_features, layer))
+                parameters[f'b{index}'] = 0
                 previous_layer_number = layer
                 continue
 
@@ -106,26 +107,36 @@ class NeuralNetwork:
 
         return optimizers
 
+    def forward(self):
+
+        self.cache['X'] = self.X
+
+        for index in range(len(self.hidden_layer)):
+            if index == 0:
+                self.cache[f'Z{index}'] = np.dot(self.parameters[f'W{index}'], self.cache[f'X'].T) + self.parameters[f'b{index}']
+                self.cache[f'A{index}'] = self.activation['hidden_layer_activation'](self.cache[f'Z{index}'])
+                continue
+            self.cache[f'Z{index}'] = np.dot(self.parameters[f'W{index}'], self.cache[f'A{index-1}'].T) + self.parameters[f'b{index}']
+            self.cache[f'A{index}'] = self.activation['hidden_layer_activation'](self.cache[f'Z{index}'])
+
+        self.cache[f'Z{len(self.hidden_layer)}'] = np.dot(self.parameters[f'W{len(self.hidden_layer)}'], self.cache['X'])
+        self.cache[f'A{len(self.hidden_layer)}'] = self.activation['output_layer_activation'](self.cache[f'Z{len(self.hidden_layer) - 1}'])
+
+        return self.cache[f'A{len(self.hidden_layer)}']
 
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
 multiclass, X, y = ldr.run()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
-a = np.array([[0.1, 0.3, 0.1, 0.13],
-              [0.45, 2.34, 1.2, 5.5],
-              [0.87, 2.35, 2.21, 8.9]])
+nn = NeuralNetwork(X_train,
+                   y_train,
+                   [6, 4, 3],
+                   {'hidden_layer_activation': utils.tanh, 'output_layer_activation': utils.softmax})
 
+params = nn.initialize()
+optims = nn.optimizer()
+activation = nn.forward()
 
-neuron1 = Neuron(X_train, 12, utils.tanh, utils.tanh_derivative, output_neuron=False)
-neuron2 = Neuron(neuron1.forward(), 6, utils.tanh, utils.tanh_derivative, output_neuron=False, y=None)
-neuron3 = Neuron(neuron2.forward(), 3, utils.softmax, utils.loss_derivative, output_neuron=True, y=y_train)
-
-nn = [neuron1, neuron2, neuron3]
-
-
-neural_n = NeuralNetwork(1, 0.01, nn)
-neural_n.train()
-
-
-
+for parameter, index in zip(params, range(len(params))):
+    pass

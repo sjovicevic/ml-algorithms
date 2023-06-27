@@ -1,6 +1,7 @@
 import numpy as np
+import utils
 
-layers = [120, 20, 10, 5, 3]
+layers = [30, 20, 10, 5, 3]
 
 input_layer = layers[0]
 hidden_layer = layers[1:-1:1]
@@ -20,3 +21,11 @@ for layer, index in zip(layers, range(len(layers))):
 
 for i in range(len(parameters) // 2):
     print(parameters[f'W{i}'].shape)
+
+
+activation = {
+    'hidden_layer_activation': utils.tanh,
+    'output_layer_activation': utils.softmax
+}
+
+print(activation['output_layer_activation'])
