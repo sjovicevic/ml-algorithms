@@ -67,21 +67,44 @@ class NeuralNetwork:
         'output_layer_activation': utils.softmax
     }
 
+    def __init__(self, X, y, layers: int, activation: dict):
+        self.X = X
+        self.n_samples = X.shape[0]
+        self.n_features = X.shape[1]
+        self.y = y
+        self.layers = layers
+        self.activation = activation
+        self.parameters = self.initialize()
+
     def initialize(self):
+
         input_layer = self.layers[0]
         hidden_layer = self.layers[1:-1:1]
         output_layer = self.layers[-1]
 
         parameters = {}
+
         for layer, index in zip(self.layers, range(len(self.layers))):
-            parameters[f'W{index}'] = 1
+            if index == 0:
+                parameters[f'W{index}'] = np.random.uniform(low=-1, high=1, size=(self.n_features, layer))
+                previous_layer_number = layer
+                continue
+
+            parameters[f'W{index}'] = np.random.uniform(low=-1, high=1, size=(previous_layer_number, layer))
             parameters[f'b{index}'] = 0
+            previous_layer_number = layer
 
         return parameters
 
-    def __init__(self, layers: int, activation: dict):
-        self.layers = layers
-        self.activation = activation
+    def optimizer(self):
+
+        optimizers = {}
+
+        for layer, index in zip(self.layers, range(len(self.layers))):
+            optimizers[f'W{index}'] = np.zeros(self.parameters[f'W{index}'])
+            optimizers[f'b{index}'] = np.zeros(self.parameters[f'b{index}'])
+
+        return optimizers
 
 
 
