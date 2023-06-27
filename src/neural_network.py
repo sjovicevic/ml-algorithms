@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn import datasets
 import pandas as pd
 import utils
+from tqdm import tqdm
 
 
 class Neuron:
@@ -21,10 +22,10 @@ class Neuron:
         self.derivative_f = derivative_f
         self.output_neuron = output_neuron
         self.y = y
+        self.n_features = data.shape[1]
         self.memory = {}
         self.bias = 0
         self.weights = np.random.uniform(low=-1, high=1, size=(self.n_features, self.n_neurons))
-        self.n_features = input.shape[1]
 
         if y is not None and output_neuron:
             y_one_hot = utils.get_one_hot(y)
@@ -58,8 +59,29 @@ class Neuron:
 
             return self.weights, delta.T, self.bias
 
-    def train(self, epochs, learning_rate):
-        pass
+
+class NeuralNetwork:
+
+    activation = {
+        'hidden_layer_activation': utils.tanh,
+        'output_layer_activation': utils.softmax
+    }
+
+    def initialize(self):
+        input_layer = self.layers[0]
+        hidden_layer = self.layers[1:-1:1]
+        output_layer = self.layers[-1]
+
+        parameters = {}
+        for layer, index in zip(self.layers, range(len(self.layers))):
+            parameters[f'W{index}'] = 1
+            parameters[f'b{index}'] = 0
+
+        return parameters
+
+    def __init__(self, layers: int, activation: dict):
+        self.layers = layers
+        self.activation = activation
 
 
 
@@ -72,12 +94,15 @@ a = np.array([[0.1, 0.3, 0.1, 0.13],
               [0.87, 2.35, 2.21, 8.9]])
 
 
-neuron1 = Neuron(X_train, 2, utils.tanh, utils.tanh_derivative, _output_neuron=False)
-neuron2 = Neuron(neuron1.forward(), 10, utils.tanh, utils.tanh_derivative, _output_neuron=False, y=None)
-neuron3 = Neuron(neuron2.forward(), 3, utils.softmax, utils.loss_derivative, _output_neuron=True, y=y_train)
+neuron1 = Neuron(X_train, 12, utils.tanh, utils.tanh_derivative, output_neuron=False)
+neuron2 = Neuron(neuron1.forward(), 6, utils.tanh, utils.tanh_derivative, output_neuron=False, y=None)
+neuron3 = Neuron(neuron2.forward(), 3, utils.softmax, utils.loss_derivative, output_neuron=True, y=y_train)
 
-print(neuron3.forward())
+nn = [neuron1, neuron2, neuron3]
 
+
+neural_n = NeuralNetwork(1, 0.01, nn)
+neural_n.train()
 
 
 

@@ -11,6 +11,10 @@ class DatasetLoader:
         return self.multiclass_flag, self.dataset.data, self.dataset.target
 
 
+def linear(z):
+    return z
+
+
 def softmax(z):
     return np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)
 
