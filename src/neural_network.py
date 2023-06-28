@@ -2,10 +2,11 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn import datasets
 import pandas as pd
+from tqdm import tqdm
 import utils
 
 
-class Neuron:
+class Layer:
 
     def __init__(self,
                  data,
@@ -31,7 +32,7 @@ class Neuron:
             if len(y_one_hot[0]) != n_neurons:
                 raise Exception("Number of neurons must be equal to the number of the output classes.")
 
-    def forward(self):
+    def forward(self, data, y=None):
         self.memory['Z'] = np.dot(self.input, self.weights) + self.bias
         self.memory['Activation'] = self.activation_f(self.memory['Z'])
 
@@ -56,85 +57,47 @@ class Neuron:
             self.weights += -0.01 * current_derivative
             self.bias += -0.01 * current_bias
 
-            return self.weights, delta.T, self.bias
+            return delta.T
 
 
 class NeuralNetwork:
 
-    activation = {
-        'hidden_layer_activation': utils.tanh,
-        'output_layer_activation': utils.softmax
-    }
-
-    def __init__(self, X, y, layers: int, activation: dict):
-        self.X = X
-        self.n_samples = X.shape[0]
-        self.n_features = X.shape[1]
+    def __init__(self, x: np.ndarray, y: np.ndarray, epochs: int, learning_rate: float):
+        self.X = x
         self.y = y
-        self.layers = layers
-        self.activation = activation
-        self.parameters = self.initialize()
-        self.cache = {}
-        self.input_layer = self.layers[0]
-        self.hidden_layer = self.layers[1:-1:1]
-        self.output_layer = self.layers[-1]
+        self.epochs = epochs
+        self.learning_rate = learning_rate
+        self.layers = []
 
-    def initialize(self):
+    def load(self, layer):
+        self.layers.append(self.load_input_layer(layer['input']))
+        self.layers.append(self.load_hidden_layer(layer['hidden']))
+        self.layers.append(self.load_output_layer(layer['output']))
 
-        parameters = {}
+    def load_input_layer(self, layer_info: list):
+        pass
+        # return Layer(layer_info[0], layer_info[1])
 
-        for layer, index in zip(self.layers, range(len(self.layers))):
-            if index == 0:
-                parameters[f'W{index}'] = np.random.uniform(low=-1, high=1, size=(self.n_features, layer))
-                parameters[f'b{index}'] = np.zeros((1, layer))
-                previous_layer_number = layer
-                continue
+    def load_hidden_layer(self, layer_info: list):
+        pass
 
-            parameters[f'W{index}'] = np.random.uniform(low=-1, high=1, size=(previous_layer_number, layer))
-            parameters[f'b{index}'] = np.zeros((1, layer))
-            previous_layer_number = layer
+    def load_output_layer(self, layer_info: list):
+        pass
 
-        return parameters
-
-    def optimizer(self):
-
-        optimizers = {}
-
-        for index in range(len(self.layers)):
-            optimizers[f'W{index}'] = np.zeros(self.parameters[f'W{index}'].shape)
-            optimizers[f'b{index}'] = np.zeros(self.parameters[f'b{index}'].shape)
-
-        return optimizers
-
-    def forward(self):
-        self.cache['X'] = self.X
-        for index in range(len(self.hidden_layer)):
-            if index == 0:
-                self.cache[f'Z{index}'] = np.dot( self.cache['X'], self.parameters[f'W{index}']) + self.parameters[f'b{index}']
-                self.cache[f'A{index}'] = self.activation['hidden_layer_activation'](self.cache[f'Z{index}'])
-                continue
-            self.cache[f'Z{index}'] = np.dot( self.cache[f'A{index-1}'], self.parameters[f'W{index}']) + self.parameters[f'b{index}']
-            self.cache[f'A{index}'] = self.activation['hidden_layer_activation'](self.cache[f'Z{index}'])
-
-        self.cache[f'Z{len(self.hidden_layer)}'] = np.dot(self.cache['X'], self.parameters[f'W{len(self.hidden_layer)}'].T) + self.parameters[f'b{index}']
-        self.cache[f'A{len(self.hidden_layer)}'] = self.activation['output_layer_activation'](self.cache[f'Z{len(self.hidden_layer) - 1}'])
-        print(len(self.hidden_layer))
-        return self.cache[f'A{len(self.hidden_layer)}']
+    def train(self):
+        pass
 
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
 multiclass, X, y = ldr.run()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
-nn = NeuralNetwork(X_train,
-                   y_train,
-                   [6, 4, 2, 1, 3],
-                   {'hidden_layer_activation': utils.tanh, 'output_layer_activation': utils.softmax})
+layers = {
+    'input': [120, utils.relu],
+    'hidden': [[20, utils.tanh], [10, utils.tanh]],
+    'output': [3, utils.softmax]
+}
 
-params = nn.initialize()
-optims = nn.optimizer()
-activation = nn.forward()
-print(activation.shape)
 
 for parameter, index in zip(params, range(len(params))):
     pass
