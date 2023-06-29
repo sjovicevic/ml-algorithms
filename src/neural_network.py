@@ -1,8 +1,7 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn import datasets
-import pandas as pd
-from tqdm import tqdm
+import matplotlib.pyplot as plt
 import utils
 
 
@@ -13,54 +12,35 @@ class Layer:
                  n_neurons,
                  activation_f,
                  activation_f_derivative,
-                 output_layer=None):
+                 input_layer=None):
         self.input = input
         self.n_neurons = n_neurons
         self.activation_f = activation_f
         self.derivative_f = activation_f_derivative
-        self.output_layer = output_layer
+        self.input_layer = input_layer
         self.y = y_train
         self.memory = {}
-        self.bias = 0
         self.n_samples = self.input.shape[0]
         self.n_features = self.input.shape[1]
+
         self.weights = np.random.uniform(low=-1, high=1, size=(self.n_features, self.n_neurons))
-
-        if y is not None and output_layer:
-            y_one_hot = utils.get_one_hot(y)
-            if len(y_one_hot[0]) != n_neurons:
-                raise Exception("Number of neurons must be equal to the number of the output classes.")
-
-    def initialize_parameters(self, input):
-        pass
+        self.bias = np.zeros(n_neurons)
 
     def forward(self):
         self.memory['Z'] = np.dot(self.input, self.weights) + self.bias
         self.memory['Activation'] = self.activation_f(self.memory['Z'])
+        return self.memory['Activation']
 
-        if self.output_layer:
-            loss = utils.loss(self.memory['Activation'], y_train, self.n_samples)
-            return loss
-        else:
-            return self.memory['Activation']
+    def backward(self, next_activation=None, previous_derivative=None):
+        da_dz = self.derivative_f(self.memory['Z'])
+        delta = np.dot(previous_derivative * da_dz, self.weights.T)
+        w_grad = np.dot(next_activation.T, previous_derivative * da_dz)
+        # b_grad = np.sum(previous_derivative * da_dz, axis=0)
 
-    def backward(self, next_activation=None, next_weights=None, previous_derivative=None):
+        self.weights += -0.001 * w_grad
+        # self.bias += -0.001 * b_grad
 
-        if self.output_layer:
-            self.y = np.array(pd.get_dummies(self.y, dtype='int8'))
-            self.memory['Loss_derivative_value'] = self.derivative_f(self.memory['Activation'])
-            #derivative = np.dot(self.memory['Loss_derivative_value'])
-            return self.memory['Loss_derivative_value']
-
-        else:
-            da_dz = self.derivative_f(self.memory['Z'])
-            current_derivative = np.dot(next_activation, da_dz) * previous_derivative
-            current_bias = np.sum(da_dz, axis=0, keepdims=True)
-            delta = np.dot(next_weights.T, da_dz.T) * previous_derivative
-            self.weights += -0.01 * current_derivative
-            self.bias += -0.01 * current_bias
-
-            return delta.T
+        return delta
 
 
 class NeuralNetwork:
@@ -111,32 +91,33 @@ layers = {
     'hidden': [[10, utils.tanh]],
     'output': [3, utils.softmax]
 }
-epochs = 10
+epochs = 80
 
-input_layer = Layer(X_train,
-                    120,
-                    activation_f=utils.tanh,
-                    activation_f_derivative=utils.tanh_derivative)
-input_layer_output = input_layer.forward()
-hidden_layer = Layer(input_layer_output,
-                     10,
-                     activation_f=utils.tanh,
-                     activation_f_derivative=utils.tanh_derivative)
-hidden_layer_output = hidden_layer.forward()
-output_layer = Layer(hidden_layer_output,
-                     3,
-                     activation_f=utils.softmax,
-                     activation_f_derivative=utils.softmax_derivative,
-                     output_layer=True)
-output_layer_output = output_layer.forward()
+lay1 = Layer(X_train, 30, utils.tanh, utils.tanh_derivative, input_layer=True)
+lay1_out = lay1.forward()
+lay2 = Layer(lay1_out, 10, utils.tanh, utils.tanh_derivative)
+lay2_out = lay2.forward()
+lay3 = Layer(lay2_out, 3, utils.softmax, utils.softmax_derivative)
+lay3_out = lay3.forward()
+
+loss_history = []
 
 for _ in range(epochs):
-    output_derivative = output_layer.backward(hidden_layer_output, hidden_layer.weights, output_layer_output)
-    hidden_derivative = hidden_layer.backward(input_layer_output, input_layer.weights, output_derivative)
-    input_derivative = input_layer.backward(input_layer_output, input_layer.weights, hidden_derivative)
 
-    input_layer_output = input_layer.forward()
-    hidden_layer_output = hidden_layer.forward()
-    output_layer_output = output_layer.forward()
+    loss = utils.loss(lay3_out, y_train, X_train.shape[0])
+    loss_history.append(loss)
 
-    print(output_layer_output)
+    loss_derivative = utils.loss_derivative(y_train, lay3_out)
+
+    lay3_back = lay3.backward(lay2_out, loss_derivative)
+    lay2_back = lay2.backward(lay1_out, lay3_back)
+    lay1_back = lay1.backward(X_train, lay2_back)
+
+    lay1_out = lay1.forward()
+    lay2_out = lay2.forward()
+    lay3_out = lay3.forward()
+
+plt.plot(loss_history, c='orange')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.show()

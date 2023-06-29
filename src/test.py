@@ -6,5 +6,4 @@ a = np.array([[1, 1, 1, 1],
               [9, 11, 23, 14],
               [34, 3, 1, 3]])
 
-print(a)
-print(np.diagflat(a))
+print(np.sum(a, axis=0))
