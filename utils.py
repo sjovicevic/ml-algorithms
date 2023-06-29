@@ -11,16 +11,12 @@ class DatasetLoader:
         return self.multiclass_flag, self.dataset.data, self.dataset.target
 
 
-def linear(z):
-    return z
-
-
 def softmax(z):
-    return np.exp(z) / np.sum(np.exp(z), axis=1, keepdims=True)
+    return np.exp(z) / np.sum(np.exp(z) - np.max(z, axis=0), axis=1, keepdims=True)
 
 
 def softmax_derivative(z):
-    return np.diagflat(z) - np.dot(z, z.T)
+    return softmax(z) * (1 - softmax(z))
 
 
 def categorical_cross_entropy_loss(y_hat, y=None):
@@ -28,15 +24,16 @@ def categorical_cross_entropy_loss(y_hat, y=None):
 
 
 def loss_derivative(y, y_hat):
-    return -np.divide(y, y_hat)
+    y_one_hot = get_one_hot(y)
+    return -np.divide(y_one_hot, y_hat)
 
 
 def tanh(z):
-    return (np.exp(2*z) - 1) / (np.exp(2*z) + 1)
+    return np.tanh(z)
 
 
 def tanh_derivative(z):
-    return 1 - tanh(z)**2
+    return 1 - np.tanh(z)**2
 
 
 def relu(z):
