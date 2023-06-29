@@ -11,34 +11,42 @@ class Layer:
                  input,
                  n_neurons,
                  activation_f,
-                 activation_f_derivative,
-                 input_layer=None):
+                 activation_f_derivative,):
         self.input = input
         self.n_neurons = n_neurons
         self.activation_f = activation_f
         self.derivative_f = activation_f_derivative
-        self.input_layer = input_layer
         self.y = y_train
         self.memory = {}
-        self.n_samples = self.input.shape[0]
-        self.n_features = self.input.shape[1]
-
+        self.n_features = input.shape[1]
+        self.n_samples = input.shape[0]
         self.weights = np.random.uniform(low=-1, high=1, size=(self.n_features, self.n_neurons))
-        self.bias = np.zeros(n_neurons)
+        self.bias = np.zeros(self.n_neurons)
 
-    def forward(self):
+    def __add__(self, other: dict):
+        return Layer(
+            self.forward(self.input),
+            other['neurons'],
+            other['activation_f'],
+            other['activation_f_derivative'])
+
+    def init_parameters(self, input):
+        pass
+
+    def forward(self, x):
+        self.input = x
         self.memory['Z'] = np.dot(self.input, self.weights) + self.bias
         self.memory['Activation'] = self.activation_f(self.memory['Z'])
         return self.memory['Activation']
 
-    def backward(self, next_activation=None, previous_derivative=None):
+    def backward(self, previous_derivative=None):
         da_dz = self.derivative_f(self.memory['Z'])
         delta = np.dot(previous_derivative * da_dz, self.weights.T)
-        w_grad = np.dot(next_activation.T, previous_derivative * da_dz)
-        # b_grad = np.sum(previous_derivative * da_dz, axis=0)
+        w_grad = np.dot(self.input.T, previous_derivative * da_dz)
+        b_grad = np.sum(previous_derivative * da_dz, axis=0)
 
         self.weights += -0.001 * w_grad
-        # self.bias += -0.001 * b_grad
+        self.bias += -0.001 * b_grad
 
         return delta
 
@@ -63,23 +71,34 @@ class NeuralNetwork:
         _layers = [self.load_layer(layer['input'])]
         for layer_info in layer['hidden']:
             _layers.append(self.load_layer(layer_info))
-        _layers.append(self.load_output_layer(layer['output']))
+        _layers.append(self.load_layer(layer['output']))
 
         self.layers = _layers
+
         return self.layers
 
-    @staticmethod
-    def load_layer(layer_info: list):
-        return Layer(layer_info[0], layer_info[1])
+    def train(self, x, y):
+        input_layer_out = None
+        output_layer_out = None
+        for index, layer in enumerate(self.layers):
+            if index == 0:
+                layer.init_parameters(x)
+                input_layer_out = layer.forward(x)
+                continue
+            elif index != len(self.layers) - 1:
+                next_layer = self.layers[index + 1]
+                next_layer.init_parameters(input_layer_out)
+                input_layer_out = next_layer.forward(input_layer_out)
+            else:
+                layer.init_parameters(input_layer_out)
+                output_layer_out = layer.forward(input_layer_out)
+        for layer in self.layers:
+            print(layer.weights.shape)
+
 
     @staticmethod
-    def load_output_layer(layer_info: list):
-        return Layer(layer_info[0], layer_info[1], output_layer=True)
-
-    def train(self):
-        for _ in range(self.epochs):
-            for layer, index in zip(self.layers, range(len(self.layers))):
-                layer.forward()
+    def load_layer(layer_info: list, _input=False):
+        return Layer(layer_info[0], layer_info[1], layer_info[2])
 
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
@@ -87,13 +106,35 @@ multiclass, X, y = ldr.run()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
 layers = {
-    'input': [120, utils.relu],
-    'hidden': [[10, utils.tanh]],
-    'output': [3, utils.softmax]
+    'input': [120, utils.tanh, utils.tanh_derivative],
+    'hidden': [[10, utils.tanh, utils.tanh_derivative]],
+    'output': [3, utils.softmax, utils.softmax_derivative]
 }
-epochs = 80
+epochs = 100
 
-lay1 = Layer(X_train, 30, utils.tanh, utils.tanh_derivative, input_layer=True)
+l1 = Layer(X_train, 30, utils.tanh, utils.tanh_derivative)
+l2 = l1.__add__({'neurons': 10, 'activation_f': utils.tanh, 'activation_f_derivative': utils.tanh_derivative})
+l3 = l2.__add__({'neurons': 3, 'activation_f': utils.softmax, 'activation_f_derivative': utils.softmax_derivative})
+
+layers_obj = [l1, l2, l3]
+print(layers_obj)
+
+loss_history = []
+
+for _ in range(epochs):
+    y_hat = l3.forward(l2.forward(l1.forward(X_train)))
+    loss = utils.loss(y_hat, y_train, X_train.shape[0])
+    loss_history.append(loss)
+
+    loss_derivative = utils.loss_derivative(y_train, y_hat)
+    lay3_back = l3.backward(loss_derivative)
+    lay2_back = l2.backward(lay3_back)
+    lay1_back = l1.backward(lay2_back)
+
+
+
+'''
+lay1 = Layer(X_train, 30, utils.tanh, utils.tanh_derivative)
 lay1_out = lay1.forward()
 lay2 = Layer(lay1_out, 10, utils.tanh, utils.tanh_derivative)
 lay2_out = lay2.forward()
@@ -116,6 +157,7 @@ for _ in range(epochs):
     lay1_out = lay1.forward()
     lay2_out = lay2.forward()
     lay3_out = lay3.forward()
+'''
 
 plt.plot(loss_history, c='orange')
 plt.xlabel('Epochs')
