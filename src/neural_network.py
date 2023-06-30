@@ -43,10 +43,10 @@ class Layer:
         da_dz = self.derivative_f(self.memory['Z'])
         delta = np.dot(previous_derivative * da_dz, self.weights.T)
         w_grad = np.dot(self.input.T, previous_derivative * da_dz)
-        b_grad = np.sum(previous_derivative * da_dz, axis=0)
+        # b_grad = np.sum(previous_derivative * da_dz, axis=0)
 
         self.weights += -0.001 * w_grad
-        self.bias += -0.001 * b_grad
+        # self.bias += -0.001 * b_grad
 
         return delta
 
@@ -105,19 +105,11 @@ ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
 multiclass, X, y = ldr.run()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
-layers = {
-    'input': [120, utils.tanh, utils.tanh_derivative],
-    'hidden': [[10, utils.tanh, utils.tanh_derivative]],
-    'output': [3, utils.softmax, utils.softmax_derivative]
-}
-epochs = 100
+epochs = 20
 
 l1 = Layer(X_train, 30, utils.tanh, utils.tanh_derivative)
 l2 = l1.__add__({'neurons': 10, 'activation_f': utils.tanh, 'activation_f_derivative': utils.tanh_derivative})
 l3 = l2.__add__({'neurons': 3, 'activation_f': utils.softmax, 'activation_f_derivative': utils.softmax_derivative})
-
-layers_obj = [l1, l2, l3]
-print(layers_obj)
 
 loss_history = []
 
@@ -130,34 +122,6 @@ for _ in range(epochs):
     lay3_back = l3.backward(loss_derivative)
     lay2_back = l2.backward(lay3_back)
     lay1_back = l1.backward(lay2_back)
-
-
-
-'''
-lay1 = Layer(X_train, 30, utils.tanh, utils.tanh_derivative)
-lay1_out = lay1.forward()
-lay2 = Layer(lay1_out, 10, utils.tanh, utils.tanh_derivative)
-lay2_out = lay2.forward()
-lay3 = Layer(lay2_out, 3, utils.softmax, utils.softmax_derivative)
-lay3_out = lay3.forward()
-
-loss_history = []
-
-for _ in range(epochs):
-
-    loss = utils.loss(lay3_out, y_train, X_train.shape[0])
-    loss_history.append(loss)
-
-    loss_derivative = utils.loss_derivative(y_train, lay3_out)
-
-    lay3_back = lay3.backward(lay2_out, loss_derivative)
-    lay2_back = lay2.backward(lay1_out, lay3_back)
-    lay1_back = lay1.backward(X_train, lay2_back)
-
-    lay1_out = lay1.forward()
-    lay2_out = lay2.forward()
-    lay3_out = lay3.forward()
-'''
 
 plt.plot(loss_history, c='orange')
 plt.xlabel('Epochs')
