@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn import datasets
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 import utils
 
 
@@ -22,108 +23,109 @@ class Layer:
         self.n_samples = input.shape[0]
         self.weights = np.random.uniform(low=-1, high=1, size=(self.n_features, self.n_neurons))
         self.bias = np.zeros(self.n_neurons)
+        self.learning_rate = 0
 
     def __add__(self, other: dict):
         return Layer(
             self.forward(self.input),
             other['neurons'],
             other['activation_f'],
-            other['activation_f_derivative'])
-
-    def init_parameters(self, input):
-        pass
+            other['activation_f_d'])
 
     def forward(self, x):
         self.input = x
         self.memory['Z'] = np.dot(self.input, self.weights) + self.bias
         self.memory['Activation'] = self.activation_f(self.memory['Z'])
+
         return self.memory['Activation']
 
     def backward(self, previous_derivative=None):
         da_dz = self.derivative_f(self.memory['Z'])
         delta = np.dot(previous_derivative * da_dz, self.weights.T)
         w_grad = np.dot(self.input.T, previous_derivative * da_dz)
-        # b_grad = np.sum(previous_derivative * da_dz, axis=0)
-
-        self.weights += -0.001 * w_grad
-        # self.bias += -0.001 * b_grad
+        b_grad = np.sum(previous_derivative * da_dz, axis=0)
+        self.weights += -self.learning_rate * w_grad
+        self.bias += -self.learning_rate * b_grad
 
         return delta
 
 
 class NeuralNetwork:
 
-    def __init__(self, x: np.ndarray, y: np.ndarray, epochs: int, learning_rate: float):
-        self.X = x
-        self.y = y
-        self.epochs = epochs
-        self.learning_rate = learning_rate
-        self.layers = []
+    def __init__(self, layers, x_train, x_test, y_train, y_test):
+        self.X_train = x_train
+        self.X_test = x_test
+        self.y_train = y_train
+        self.y_test = y_test
+        self.loss_history = []
+        self.layers = self.clean(layers)
 
-    def load(self, layer):
+    def train(self, epochs, learning_rate):
+        layers_cleaned = self.set_lr(learning_rate, self.layers)
 
-        """
-        This function loads layers into neural network.
-        :param layer: dictionary with keywords 'input', 'hidden', 'output' with list with two parameters as values.
-        First parameter represents number of neurons, second parameter represents activation function.
-        :return: List with Layer objects [Layer(input), Layer(hidden)..., Layer(output)]
-        """
-        _layers = [self.load_layer(layer['input'])]
-        for layer_info in layer['hidden']:
-            _layers.append(self.load_layer(layer_info))
-        _layers.append(self.load_layer(layer['output']))
-
-        self.layers = _layers
-
-        return self.layers
-
-    def train(self, x, y):
-        input_layer_out = None
-        output_layer_out = None
-        for index, layer in enumerate(self.layers):
-            if index == 0:
-                layer.init_parameters(x)
-                input_layer_out = layer.forward(x)
-                continue
-            elif index != len(self.layers) - 1:
-                next_layer = self.layers[index + 1]
-                next_layer.init_parameters(input_layer_out)
-                input_layer_out = next_layer.forward(input_layer_out)
-            else:
-                layer.init_parameters(input_layer_out)
-                output_layer_out = layer.forward(input_layer_out)
-        for layer in self.layers:
-            print(layer.weights.shape)
-
+        for _ in tqdm(range(epochs), desc="Training progress: "):
+            prediction = self.propagation(layers_cleaned)
+            temp_loss = utils.loss(prediction, self.y_train, self.X_train.shape[0])
+            self.loss_history.append(temp_loss)
+            loss_derivative = utils.loss_derivative(self.y_train, prediction)
+            self.backpropagation(layers_cleaned, loss_derivative)
 
     @staticmethod
-    def load_layer(layer_info: list, _input=False):
-        return Layer(layer_info[0], layer_info[1], layer_info[2])
+    def set_lr(alpha, layers):
+        for layer in layers:
+            layer.learning_rate = alpha
+        return layers
+
+    @staticmethod
+    def backpropagation(layer_in, loss_der):
+        layer_in = layer_in[::-1]
+        tmp_derivative = layer_in[0].backward(loss_der)
+        for layer, index in zip(layer_in, range(len(layer_in) - 1)):
+            tmp_derivative = layer_in[index + 1].backward(tmp_derivative)
+            index += 1
+
+    @staticmethod
+    def propagation(layer_in):
+        tmp_hat = layer_in[0]
+        for layer, index in zip(layers_in, range(len(layer_in) - 1)):
+            tmp_hat = layer_in[index + 1].forward(layer_in[index].memory['Activation'])
+            index += 1
+
+        return tmp_hat
+
+    def clean(self, layers):
+        l1 = Layer(self.X_train, layers[0]['neurons'], layers[0]['activation_f'], layers[0]['activation_f_d'])
+        tmp = l1
+        index_layer = 1
+        layers_out = [l1]
+
+        for index in range(len(layers) - 1):
+            layers_out.append(tmp.__add__(layers[index_layer]))
+            tmp = layers_out[-1]
+            index_layer += 1
+
+        return layers_out
+
+    def plot_loss(self):
+        plt.plot(self.loss_history, c='orange')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.show()
 
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
 multiclass, X, y = ldr.run()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
-epochs = 20
+layers_in = [
+            {'neurons': 30, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
+            {'neurons': 10, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
+            {'neurons': 6, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
+            {'neurons': 5, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
+            {'neurons': 3, 'activation_f': utils.softmax, 'activation_f_d': utils.softmax_derivative}
+            ]
 
-l1 = Layer(X_train, 30, utils.tanh, utils.tanh_derivative)
-l2 = l1.__add__({'neurons': 10, 'activation_f': utils.tanh, 'activation_f_derivative': utils.tanh_derivative})
-l3 = l2.__add__({'neurons': 3, 'activation_f': utils.softmax, 'activation_f_derivative': utils.softmax_derivative})
+nn = NeuralNetwork(layers_in, X_train, X_test, y_train, y_test)
+nn.train(epochs=50, learning_rate=0.001)
+nn.plot_loss()
 
-loss_history = []
-
-for _ in range(epochs):
-    y_hat = l3.forward(l2.forward(l1.forward(X_train)))
-    loss = utils.loss(y_hat, y_train, X_train.shape[0])
-    loss_history.append(loss)
-
-    loss_derivative = utils.loss_derivative(y_train, y_hat)
-    lay3_back = l3.backward(loss_derivative)
-    lay2_back = l2.backward(lay3_back)
-    lay1_back = l1.backward(lay2_back)
-
-plt.plot(loss_history, c='orange')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.show()
