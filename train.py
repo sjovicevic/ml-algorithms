@@ -14,8 +14,6 @@ clf.fit(X_train, y_train, multiclass)
 
 f = 4
 o = 3
-#model = NeuralNetwork(X_train, y_train, 1, [f, 5, 10, o], learning_rate=0.001)
-#model.run()
 
 y_prediction = clf.predict(X_test, multiclass)
 print(f"Model prediction: {y_prediction}")

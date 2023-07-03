@@ -61,39 +61,54 @@ class NeuralNetwork:
         self.layers = self.clean(layers)
 
     def train(self, epochs, learning_rate):
+        """
+        'main' function in neural network.
+        Cleaning layers, making prediction, calculating loss, getting loss derivative and then back propagating.
+        Weights and biases are updating on Layer level.
+        Doing this 'epoch' times, also can set specific learning rate.
+        """
         layers_cleaned = self.set_lr(learning_rate, self.layers)
 
         for _ in tqdm(range(epochs), desc="Training progress: "):
-            prediction = self.propagation(layers_cleaned)
+            prediction = self.propagation()
             temp_loss = utils.loss(prediction, self.y_train, self.X_train.shape[0])
             self.loss_history.append(temp_loss)
             loss_derivative = utils.loss_derivative(self.y_train, prediction)
-            self.backpropagation(layers_cleaned, loss_derivative)
+            self.backpropagation(loss_derivative)
 
     @staticmethod
     def set_lr(alpha, layers):
+        """
+        Static method for setting learning rate for all layers.
+        """
         for layer in layers:
             layer.learning_rate = alpha
         return layers
 
-    @staticmethod
-    def backpropagation(layer_in, loss_der):
-        layer_in = layer_in[::-1]
+    def backpropagation(self, loss_der):
+        """
+        Backpropagation through every layer, not dependent on network size.
+        """
+        layer_in = self.layers[::-1]
         tmp_derivative = layer_in[0].backward(loss_der)
         for layer, index in zip(layer_in, range(len(layer_in) - 1)):
             tmp_derivative = layer_in[index + 1].backward(tmp_derivative)
             index += 1
 
-    @staticmethod
-    def propagation(layer_in):
-        tmp_hat = layer_in[0]
-        for layer, index in zip(layers_in, range(len(layer_in) - 1)):
-            tmp_hat = layer_in[index + 1].forward(layer_in[index].memory['Activation'])
+    def propagation(self, test=False):
+        """
+        Forward propagation through every layer, not dependent on network size.
+        """
+        tmp_hat = self.layers[0]
+        for layer, index in zip(layers_in, range(len(self.layers) - 1)):
+            tmp_hat = self.layers[index + 1].forward(self.layers[index].memory['Activation'])
             index += 1
-
         return tmp_hat
 
     def clean(self, layers):
+        """
+        Method used to help set layers, extracting data from dictionary to a format suitable for use.
+        """
         l1 = Layer(self.X_train, layers[0]['neurons'], layers[0]['activation_f'], layers[0]['activation_f_d'])
         tmp = l1
         index_layer = 1
@@ -106,7 +121,13 @@ class NeuralNetwork:
 
         return layers_out
 
+    def predict(self):
+        pass
+
     def plot_loss(self):
+        """
+        Simple plotting.
+        """
         plt.plot(self.loss_history, c='orange')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
@@ -120,12 +141,12 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 layers_in = [
             {'neurons': 30, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
             {'neurons': 10, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
-            {'neurons': 6, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
-            {'neurons': 5, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
             {'neurons': 3, 'activation_f': utils.softmax, 'activation_f_d': utils.softmax_derivative}
             ]
 
 nn = NeuralNetwork(layers_in, X_train, X_test, y_train, y_test)
-nn.train(epochs=50, learning_rate=0.001)
+nn.train(epochs=30, learning_rate=0.001)
 nn.plot_loss()
+nn.predict()
+
 
