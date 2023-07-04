@@ -17,7 +17,6 @@ class Layer:
         self.n_neurons = n_neurons
         self.activation_f = activation_f
         self.derivative_f = activation_f_derivative
-        self.y = y_train
         self.memory = {}
         self.n_features = input.shape[1]
         self.n_samples = input.shape[0]
@@ -67,7 +66,7 @@ class NeuralNetwork:
         Weights and biases are updating on Layer level.
         Doing this 'epoch' times, also can set specific learning rate.
         """
-        layers_cleaned = self.set_lr(learning_rate, self.layers)
+        self.set_lr(learning_rate, self.layers)
 
         for _ in tqdm(range(epochs), desc="Training progress: "):
             prediction = self.propagation()
@@ -83,6 +82,7 @@ class NeuralNetwork:
         """
         for layer in layers:
             layer.learning_rate = alpha
+
         return layers
 
     def backpropagation(self, loss_der):
@@ -93,16 +93,15 @@ class NeuralNetwork:
         tmp_derivative = layer_in[0].backward(loss_der)
         for layer, index in zip(layer_in, range(len(layer_in) - 1)):
             tmp_derivative = layer_in[index + 1].backward(tmp_derivative)
-            index += 1
 
-    def propagation(self, test=False):
+    def propagation(self):
         """
         Forward propagation through every layer, not dependent on network size.
         """
         tmp_hat = self.layers[0]
         for layer, index in zip(layers_in, range(len(self.layers) - 1)):
             tmp_hat = self.layers[index + 1].forward(self.layers[index].memory['Activation'])
-            index += 1
+
         return tmp_hat
 
     def clean(self, layers):
@@ -136,7 +135,7 @@ class NeuralNetwork:
 
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
 multiclass, X, y = ldr.run()
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
+X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
 layers_in = [
             {'neurons': 30, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
@@ -144,9 +143,7 @@ layers_in = [
             {'neurons': 3, 'activation_f': utils.softmax, 'activation_f_d': utils.softmax_derivative}
             ]
 
-nn = NeuralNetwork(layers_in, X_train, X_test, y_train, y_test)
+nn = NeuralNetwork(layers_in, X_train, X_test, Y_train, Y_test)
 nn.train(epochs=30, learning_rate=0.001)
 nn.plot_loss()
 nn.predict()
-
-
