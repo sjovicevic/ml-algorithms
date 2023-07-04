@@ -9,17 +9,17 @@ import utils
 class Layer:
 
     def __init__(self,
-                 input,
+                 _input,
                  n_neurons,
                  activation_f,
-                 activation_f_derivative,):
-        self.input = input
+                 activation_f_derivative):
+        self.input = _input
         self.n_neurons = n_neurons
         self.activation_f = activation_f
         self.derivative_f = activation_f_derivative
         self.memory = {}
-        self.n_features = input.shape[1]
-        self.n_samples = input.shape[0]
+        self.n_features = _input.shape[1]
+        self.n_samples = _input.shape[0]
         self.weights = np.random.uniform(low=-1, high=1, size=(self.n_features, self.n_neurons))
         self.bias = np.zeros(self.n_neurons)
         self.learning_rate = 0
@@ -61,15 +61,15 @@ class NeuralNetwork:
 
     def train(self, epochs, learning_rate):
         """
-        'main' function in neural network.
+        'main' function of neural network.
         Cleaning layers, making prediction, calculating loss, getting loss derivative and then back propagating.
-        Weights and biases are updating on Layer level.
-        Doing this 'epoch' times, also can set specific learning rate.
+        Weights and biases are being updated on Layer level.
+        Doing this 'epoch' times. You can set specific learning rate.
         """
         self.set_lr(learning_rate, self.layers)
 
         for _ in tqdm(range(epochs), desc="Training progress: "):
-            prediction = self.propagation()
+            prediction = self.propagation(0, False)
             temp_loss = utils.loss(prediction, self.y_train, self.X_train.shape[0])
             self.loss_history.append(temp_loss)
             loss_derivative = utils.loss_derivative(self.y_train, prediction)
@@ -91,15 +91,18 @@ class NeuralNetwork:
         """
         layer_in = self.layers[::-1]
         tmp_derivative = layer_in[0].backward(loss_der)
-        for layer, index in zip(layer_in, range(len(layer_in) - 1)):
+        for index in range(len(layer_in) - 1):
             tmp_derivative = layer_in[index + 1].backward(tmp_derivative)
 
-    def propagation(self):
+    def propagation(self, x_test, test=False):
         """
         Forward propagation through every layer, not dependent on network size.
         """
-        tmp_hat = self.layers[0]
-        for layer, index in zip(layers_in, range(len(self.layers) - 1)):
+        if test:
+            self.layers[0].input = x_test
+        for index in range(len(self.layers) - 1):
+            if index == 0:
+                self.layers[0].forward(self.layers[0].input)
             tmp_hat = self.layers[index + 1].forward(self.layers[index].memory['Activation'])
 
         return tmp_hat
@@ -108,20 +111,20 @@ class NeuralNetwork:
         """
         Method used to help set layers, extracting data from dictionary to a format suitable for use.
         """
-        l1 = Layer(self.X_train, layers[0]['neurons'], layers[0]['activation_f'], layers[0]['activation_f_d'])
-        tmp = l1
-        index_layer = 1
-        layers_out = [l1]
+        tmp = Layer(self.X_train, layers[0]['neurons'], layers[0]['activation_f'], layers[0]['activation_f_d'])
+        layers_out = [tmp]
 
         for index in range(len(layers) - 1):
-            layers_out.append(tmp.__add__(layers[index_layer]))
+            layers_out.append(tmp.__add__(layers[index+1]))
             tmp = layers_out[-1]
-            index_layer += 1
 
         return layers_out
 
-    def predict(self):
-        pass
+    def predict(self, x_test, y_test):
+        y_predicted = np.argmax(self.propagation(x_test, test=True), axis=1)
+        print(y_predicted)
+        print(y_test)
+        return utils.accuracy(y_predicted, y_test)
 
     def plot_loss(self):
         """
@@ -138,12 +141,13 @@ multiclass, X, y = ldr.run()
 X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
 layers_in = [
-            {'neurons': 30, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
-            {'neurons': 10, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
+            {'neurons': 64, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
+            {'neurons': 32, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
+            {'neurons': 16, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
             {'neurons': 3, 'activation_f': utils.softmax, 'activation_f_d': utils.softmax_derivative}
             ]
 
 nn = NeuralNetwork(layers_in, X_train, X_test, Y_train, Y_test)
-nn.train(epochs=30, learning_rate=0.001)
+nn.train(epochs=50, learning_rate=0.0001)
+print(nn.predict(X_test, Y_test))
 nn.plot_loss()
-nn.predict()

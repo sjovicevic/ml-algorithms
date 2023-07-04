@@ -95,13 +95,3 @@ def find_max_output(output):
 def accuracy(y_p, y_t):
     return np.sum(y_p == y_t) / len(y_t)
 
-
-def plot_model(J_history):
-    """
-    Plotting the cost values.
-    """
-    plt.xlabel('Iterations')
-    plt.ylabel('Loss value')
-    plt.grid(True)
-    plt.plot(J_history, color='orange')
-    plt.show()
