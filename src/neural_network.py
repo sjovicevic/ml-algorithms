@@ -122,14 +122,17 @@ class NeuralNetwork:
 
     def predict(self, x_test, y_test):
         y_predicted = np.argmax(self.propagation(x_test, test=True), axis=1)
-        print(y_predicted)
-        print(y_test)
+        print(f'Predicted values: {y_predicted}')
+        print(f'Actual values:    {y_test}')
         return utils.accuracy(y_predicted, y_test)
 
     def plot_loss(self):
         """
         Simple plotting.
         """
+        for loss in self.loss_history[0:-1:5]:
+            print(f'Loss value: {loss:.5f}')
+
         plt.plot(self.loss_history, c='orange')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
@@ -149,5 +152,6 @@ layers_in = [
 
 nn = NeuralNetwork(layers_in, X_train, X_test, Y_train, Y_test)
 nn.train(epochs=50, learning_rate=0.0001)
-print(nn.predict(X_test, Y_test))
+print(f'Accuracy score: {nn.predict(X_test, Y_test)}')
 nn.plot_loss()
+
