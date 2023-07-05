@@ -87,7 +87,7 @@ class NeuralNetwork:
 
     def backpropagation(self, loss_der):
         """
-        Backpropagation through every layer, not dependent on network size.
+        Backpropagation through every layer.
         """
         layer_in = self.layers[::-1]
         tmp_derivative = layer_in[0].backward(loss_der)
@@ -96,7 +96,7 @@ class NeuralNetwork:
 
     def propagation(self, x_test, test=False):
         """
-        Forward propagation through every layer, not dependent on network size.
+        Forward propagation through every layer.
         """
         if test:
             self.layers[0].input = x_test
