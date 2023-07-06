@@ -11,12 +11,10 @@ class Layer:
     def __init__(self,
                  _input,
                  n_neurons,
-                 activation_f,
-                 activation_f_derivative):
+                 activation_f):
         self.input = _input
         self.n_neurons = n_neurons
         self.activation_f = activation_f
-        self.derivative_f = activation_f_derivative
         self.memory = {}
         self.n_features = _input.shape[1]
         self.n_samples = _input.shape[0]
@@ -28,8 +26,7 @@ class Layer:
         return Layer(
             self.forward(self.input),
             other['neurons'],
-            other['activation_f'],
-            other['activation_f_d'])
+            other['activation_f'])
 
     def forward(self, x):
         self.input = x
@@ -38,15 +35,14 @@ class Layer:
 
         return self.memory['Activation']
 
-    def backward(self, previous_derivative=None):
-        da_dz = self.derivative_f(self.memory['Z'])
-        delta = np.dot(previous_derivative * da_dz, self.weights.T)
+    def backward(self, previous_derivative, req_delta=False):
+        da_dz = self.activation_f(self.memory['Z'], derivative=True)
         w_grad = np.dot(self.input.T, previous_derivative * da_dz)
         b_grad = np.sum(previous_derivative * da_dz, axis=0)
         self.weights += -self.learning_rate * w_grad
         self.bias += -self.learning_rate * b_grad
 
-        return delta
+        return np.dot(previous_derivative * da_dz, self.weights.T) if req_delta else None
 
 
 class NeuralNetwork:
@@ -85,14 +81,12 @@ class NeuralNetwork:
 
         return layers
 
-    def backpropagation(self, loss_der):
+    def backpropagation(self, tmp_derivative):
         """
         Backpropagation through every layer.
         """
-        layer_in = self.layers[::-1]
-        tmp_derivative = layer_in[0].backward(loss_der)
-        for index in range(len(layer_in) - 1):
-            tmp_derivative = layer_in[index + 1].backward(tmp_derivative)
+        for idx in range(len(self.layers) - 1, -1, -1):
+            tmp_derivative = self.layers[idx].backward(tmp_derivative, idx != 0)
 
     def propagation(self, x_test, test=False):
         """
@@ -110,8 +104,8 @@ class NeuralNetwork:
     def clean(self, layers):
         """
         Method used to help set layers, extracting data from dictionary to a format suitable for use.
-        """
-        tmp = Layer(self.X_train, layers[0]['neurons'], layers[0]['activation_f'], layers[0]['activation_f_d'])
+
+        tmp = Layer(self.X_train, layers[0]['neurons'], layers[0]['activation_f'])
         layers_out = [tmp]
 
         for index in range(len(layers) - 1):
@@ -119,6 +113,9 @@ class NeuralNetwork:
             tmp = layers_out[-1]
 
         return layers_out
+        """
+
+        return [Layer(layers['neurons'], layers['activation_f']) for layer in layers]
 
     def predict(self, x_test, y_test):
         y_predicted = np.argmax(self.propagation(x_test, test=True), axis=1)
@@ -144,14 +141,14 @@ multiclass, X, y = ldr.run()
 X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
 layers_in = [
-            {'neurons': 64, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
-            {'neurons': 32, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
-            {'neurons': 16, 'activation_f': utils.tanh, 'activation_f_d': utils.tanh_derivative},
-            {'neurons': 3, 'activation_f': utils.softmax, 'activation_f_d': utils.softmax_derivative}
+            {'neurons': 64, 'activation_f': utils.relu},
+            {'neurons': 32, 'activation_f': utils.tanh},
+            {'neurons': 16, 'activation_f': utils.tanh},
+            {'neurons': 3, 'activation_f': utils.softmax}
             ]
 
 nn = NeuralNetwork(layers_in, X_train, X_test, Y_train, Y_test)
-nn.train(epochs=50, learning_rate=0.0001)
+nn.train(epochs=500, learning_rate=0.00001)
 print(f'Accuracy score: {nn.predict(X_test, Y_test)}')
 nn.plot_loss()
 
