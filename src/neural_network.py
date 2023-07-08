@@ -6,38 +6,51 @@ from tqdm import tqdm
 import utils
 
 
+def create(layers):
+    '''
+
+    :param layers: Dictionary with 3 keys, input, output, activation_f
+    :return: List of layers with initialized weights
+    '''
+    return [Layer(_input=layer['input'], n_neurons=layer['output'], activation_f=layer['activation_f'])
+            for layer in layers]
+
+
+def set_lr(alpha, layers):
+    """
+    Method for setting learning rate for all layers.
+    """
+    for layer in layers:
+        layer.learning_rate = alpha
+
+    return layers
+
+
 class Layer:
 
     def __init__(self,
                  _input,
                  n_neurons,
                  activation_f):
+
         self.input = _input
         self.n_neurons = n_neurons
         self.activation_f = activation_f
         self.memory = {}
-        self.n_features = _input.shape[1]
-        self.n_samples = _input.shape[0]
-        self.weights = np.random.uniform(low=-1, high=1, size=(self.n_features, self.n_neurons))
+        self.weights = np.random.uniform(low=-1, high=1, size=(self.input, self.n_neurons))
         self.bias = np.zeros(self.n_neurons)
-        self.learning_rate = 0
-
-    def __add__(self, other: dict):
-        return Layer(
-            self.forward(self.input),
-            other['neurons'],
-            other['activation_f'])
+        self.learning_rate = 0.01
 
     def forward(self, x):
-        self.input = x
-        self.memory['Z'] = np.dot(self.input, self.weights) + self.bias
+        self.memory['Input'] = x
+        self.memory['Z'] = np.dot(self.memory['Input'], self.weights) + self.bias
         self.memory['Activation'] = self.activation_f(self.memory['Z'])
 
         return self.memory['Activation']
 
     def backward(self, previous_derivative, req_delta=False):
         da_dz = self.activation_f(self.memory['Z'], derivative=True)
-        w_grad = np.dot(self.input.T, previous_derivative * da_dz)
+        w_grad = np.dot(self.memory['Input'].T, previous_derivative * da_dz)
         b_grad = np.sum(previous_derivative * da_dz, axis=0)
         self.weights += -self.learning_rate * w_grad
         self.bias += -self.learning_rate * b_grad
@@ -47,39 +60,45 @@ class Layer:
 
 class NeuralNetwork:
 
-    def __init__(self, layers, x_train, x_test, y_train, y_test):
-        self.X_train = x_train
-        self.X_test = x_test
-        self.y_train = y_train
-        self.y_test = y_test
+    def __init__(self, layers, epochs, learning_rate):
         self.loss_history = []
-        self.layers = self.clean(layers)
+        self.epochs = epochs
+        self.layers = set_lr(learning_rate, create(layers))
 
-    def train(self, epochs, learning_rate):
+        self.X_train = None
+        self.y_train = None
+        self.X_test = None
+        self.y_test = None
+
+    def train(self, x_train, y_train, x_test, y_test):
         """
         'main' function of neural network.
         Cleaning layers, making prediction, calculating loss, getting loss derivative and then back propagating.
         Weights and biases are being updated on Layer level.
         Doing this 'epoch' times. You can set specific learning rate.
         """
-        self.set_lr(learning_rate, self.layers)
+        self.X_train = x_train
+        self.y_train = y_train
+        self.X_test = x_test
+        self.y_test = y_test
 
-        for _ in tqdm(range(epochs), desc="Training progress: "):
-            prediction = self.propagation(0, False)
-            temp_loss = utils.loss(prediction, self.y_train, self.X_train.shape[0])
+        for _ in tqdm(range(self.epochs), desc="Training progress: "):
+            prediction = self.propagation(self.X_train)
+            temp_loss = utils.loss(prediction, y_train, X_train.shape[0])
             self.loss_history.append(temp_loss)
-            loss_derivative = utils.loss_derivative(self.y_train, prediction)
+            loss_derivative = utils.loss_derivative(y_train, prediction)
             self.backpropagation(loss_derivative)
 
-    @staticmethod
-    def set_lr(alpha, layers):
+    def propagation(self, what):
         """
-        Static method for setting learning rate for all layers.
+        Forward propagation through every layer.
         """
-        for layer in layers:
-            layer.learning_rate = alpha
+        for index in range(len(self.layers) - 1):
+            if index == 0:
+                tmp_hat = self.layers[0].forward(what)
+            tmp_hat = self.layers[index + 1].forward(tmp_hat)
 
-        return layers
+        return tmp_hat
 
     def backpropagation(self, tmp_derivative):
         """
@@ -88,40 +107,11 @@ class NeuralNetwork:
         for idx in range(len(self.layers) - 1, -1, -1):
             tmp_derivative = self.layers[idx].backward(tmp_derivative, idx != 0)
 
-    def propagation(self, x_test, test=False):
-        """
-        Forward propagation through every layer.
-        """
-        if test:
-            self.layers[0].input = x_test
-        for index in range(len(self.layers) - 1):
-            if index == 0:
-                self.layers[0].forward(self.layers[0].input)
-            tmp_hat = self.layers[index + 1].forward(self.layers[index].memory['Activation'])
-
-        return tmp_hat
-
-    def clean(self, layers):
-        """
-        Method used to help set layers, extracting data from dictionary to a format suitable for use.
-
-        tmp = Layer(self.X_train, layers[0]['neurons'], layers[0]['activation_f'])
-        layers_out = [tmp]
-
-        for index in range(len(layers) - 1):
-            layers_out.append(tmp.__add__(layers[index+1]))
-            tmp = layers_out[-1]
-
-        return layers_out
-        """
-
-        return [Layer(layers['neurons'], layers['activation_f']) for layer in layers]
-
-    def predict(self, x_test, y_test):
-        y_predicted = np.argmax(self.propagation(x_test, test=True), axis=1)
+    def predict(self):
+        y_predicted = np.argmax(self.propagation(self.X_test), axis=1)
         print(f'Predicted values: {y_predicted}')
-        print(f'Actual values:    {y_test}')
-        return utils.accuracy(y_predicted, y_test)
+        print(f'Actual values:    {self.y_test}')
+        return utils.accuracy(y_predicted, self.y_test)
 
     def plot_loss(self):
         """
@@ -141,14 +131,14 @@ multiclass, X, y = ldr.run()
 X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
 layers_in = [
-            {'neurons': 64, 'activation_f': utils.relu},
-            {'neurons': 32, 'activation_f': utils.tanh},
-            {'neurons': 16, 'activation_f': utils.tanh},
-            {'neurons': 3, 'activation_f': utils.softmax}
+            {'input': 4, 'output': 32, 'activation_f': utils.relu},
+            {'input': 32, 'output': 16, 'activation_f': utils.tanh},
+            {'input': 16, 'output': 8, 'activation_f': utils.tanh},
+            {'input': 8, 'output': 3, 'activation_f': utils.softmax}
             ]
 
-nn = NeuralNetwork(layers_in, X_train, X_test, Y_train, Y_test)
-nn.train(epochs=500, learning_rate=0.00001)
-print(f'Accuracy score: {nn.predict(X_test, Y_test)}')
+nn = NeuralNetwork(layers_in, epochs=500, learning_rate=0.00001)
+nn.train(X_train, Y_train, X_test, Y_test)
+print(f'Accuracy score: {nn.predict()}')
 nn.plot_loss()
 
