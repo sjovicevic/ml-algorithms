@@ -95,3 +95,12 @@ def find_max_output(output):
 def accuracy(y_p, y_t):
     return np.sum(y_p == y_t) / len(y_t)
 
+
+def transform_bias(a):
+    """
+    Helper function that adds bias to features matrix.
+    :param a: Feature matrix.
+    :return: New matrix with one column shape + 1.
+    """
+    ones_to_x = np.ones((a.shape[0], 1))
+    return np.concatenate([ones_to_x, a], axis=1)

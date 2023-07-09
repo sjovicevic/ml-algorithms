@@ -43,7 +43,7 @@ class Layer:
 
     def forward(self, x):
         self.memory['Input'] = x
-        self.memory['Z'] = np.dot(self.memory['Input'], self.weights) + self.bias
+        self.memory['Z'] = np.dot(self.memory['Input'], self.weights)
         self.memory['Activation'] = self.activation_f(self.memory['Z'])
 
         return self.memory['Activation']
@@ -89,13 +89,13 @@ class NeuralNetwork:
             loss_derivative = utils.loss_derivative(y_train, prediction)
             self.backpropagation(loss_derivative)
 
-    def propagation(self, what):
+    def propagation(self, x):
         """
         Forward propagation through every layer.
         """
         for index in range(len(self.layers) - 1):
             if index == 0:
-                tmp_hat = self.layers[0].forward(what)
+                tmp_hat = self.layers[0].forward(x)
             tmp_hat = self.layers[index + 1].forward(tmp_hat)
 
         return tmp_hat

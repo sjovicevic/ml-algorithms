@@ -5,14 +5,7 @@ from tqdm import tqdm
 import utils
 
 
-def transform_bias(a):
-    """
-    Helper function that adds bias to features matrix.
-    :param a: Feature matrix.
-    :return: New matrix with one column shape + 1.
-    """
-    ones_to_x = np.ones((a.shape[0], 1))
-    return np.concatenate([ones_to_x, a], axis=1)
+
 
 
 class LogisticRegression:
@@ -42,11 +35,8 @@ class LogisticRegression:
             n_classes = len(self.y_one_hot[0])
             self.weights = np.random.uniform(low=-1, high=1, size=(n_features + 1, n_classes))
 
-        x = transform_bias(x)
+        x = utils.transform_bias(x)
 
-        print(f'X shape: {x.shape}')
-        print(f'Y shape: {y.shape}')
-        print(f'weights shape: {self.weights.shape}')
         for _ in tqdm(range(self.n_iters), desc="Training progress: "):
             f_wb = np.dot(x, self.weights)
 
@@ -87,7 +77,6 @@ class LogisticRegression:
         self.loss = (-1 / n_samples) * np.sum(np.multiply(self.y_one_hot, np.log(softmax)))
         self.J_history.append(self.loss)
         dw = (-1 / n_samples) * np.dot(x.T, (self.y_one_hot - softmax))
-        print(f'dw shape {dw.shape}')
 
         return dw
 
@@ -98,7 +87,7 @@ class LogisticRegression:
         :param multiclass: Flag whether output is binary or multiclass problem.
         :return: Indices of predicted class inside one row for multiclass case. Or predicted value for binary case.
         """
-        x = transform_bias(x)
+        x = utils.transform_bias(x)
         f_wb = np.dot(x, self.weights)
 
         if not multiclass:
