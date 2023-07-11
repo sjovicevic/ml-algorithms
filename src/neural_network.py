@@ -38,25 +38,27 @@ class Layer:
         self.activation_f = activation_f
         self.memory = {}
         self.weights = np.random.uniform(low=-1, high=1, size=(self.input + 1, self.n_neurons))
-        # self.bias = np.zeros(self.n_neurons)
+        self.bias = np.zeros(self.n_neurons)
         self.learning_rate = 0.01
 
-    def forward(self, x):
+    def forward(self, x, last_layer=False):
         self.memory['Input'] = x
         self.memory['Z'] = np.dot(self.memory['Input'], self.weights)
-        self.memory['Activation'] = self.activation_f(self.memory['Z'])
-
-        # ovde prosirujem za plus 1
-        return self.memory['Activation']
+        if last_layer:
+            self.memory['Activation'] = self.activation_f(self.memory['Z'])
+            return self.memory['Activation']
+        else:
+            self.memory['Activation'] = utils.transform_bias(self.activation_f(self.memory['Z']))
+            return self.memory['Activation']
 
     def backward(self, previous_derivative, req_delta=False):
         da_dz = self.activation_f(self.memory['Z'], derivative=True)
         w_grad = np.dot(self.memory['Input'].T, previous_derivative * da_dz)
-        # b_grad = np.sum(da_dz, axis=0)
+        b_grad = np.sum(da_dz, axis=0)
         self.weights += -self.learning_rate * w_grad
-        # self.bias += -self.learning_rate * b_grad
+        self.bias += -self.learning_rate * b_grad
 
-        return np.dot(previous_derivative * da_dz, self.weights.T) if req_delta else None
+        return np.dot(previous_derivative * da_dz, self.weights.T[:,:-1]) if req_delta else None
 
 
 class NeuralNetwork:
@@ -94,10 +96,18 @@ class NeuralNetwork:
         """
         Forward propagation through every layer.
         """
+        '''
         for layer in self.layers:
             x = layer.forward(x)
+        '''
 
-        return x
+        for index in range(len(self.layers)):
+            if index == len(self.layers) - 1:
+                x = self.layers[index].forward(x, last_layer=True)
+                return x
+            else:
+                x = self.layers[index].forward(x, last_layer=False)
+
 
     def backpropagation(self, tmp_derivative):
         """
@@ -116,8 +126,8 @@ class NeuralNetwork:
         """
         Simple plotting.
         """
-        #for loss in self.loss_history[0:-1:20]:
-       #     print(f'Loss value: {loss:.5f}')
+        # for loss in self.loss_history[0:-1:20]:
+        # print(f'Loss value: {loss:.5f}')
 
         plt.plot(self.loss_history, c='orange')
         plt.xlabel('Epochs')
@@ -129,9 +139,10 @@ ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
 multiclass, X, y = ldr.run()
 X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 X_train = utils.transform_bias(X_train)
+X_test = utils.transform_bias(X_test)
 
 layers_in = [
-            {'input': X_train.shape[1], 'output': 16, 'activation_f': utils.tanh},
+            {'input': 4, 'output': 16, 'activation_f': utils.tanh},
             {'input': 16, 'output': 8, 'activation_f': utils.tanh},
             {'input': 8, 'output': 3, 'activation_f': utils.softmax}
             ]

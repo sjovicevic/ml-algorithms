@@ -5,9 +5,6 @@ from tqdm import tqdm
 import utils
 
 
-
-
-
 class LogisticRegression:
 
     def __init__(self, alpha=0.01, n_iters=1000):
