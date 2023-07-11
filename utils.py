@@ -28,11 +28,11 @@ def softmax_derivative(z):
     return softmax(z) * (1 - softmax(z))
 
 
-def categorical_cross_entropy_loss(y_hat, y=None, derivative=False):
+def categorical_cross_entropy_loss(y_hat, y, derivative=False):
     if derivative:
         return loss_derivative(y_hat, y)
     else:
-        return -np.multiply(y, np.log(y_hat))
+        return -np.multiply(y, np.argmax(np.log(y_hat), axis=1))
 
 
 def loss_derivative(y, y_hat):
