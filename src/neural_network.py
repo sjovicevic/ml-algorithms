@@ -6,8 +6,6 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import utils
 
-seed(123)
-
 
 def create(layers):
     """
@@ -50,10 +48,7 @@ class Layer:
         return self.memory['Activation']
 
     def backward(self, previous_derivative, req_delta=False):
-        if self.activation_f == utils.softmax:
-            da_dz = utils.softmax_derivative(previous_derivative, self.memory['Activation'])
-        else:
-            da_dz = self.activation_f(self.memory['Z'], derivative=True)
+        da_dz = self.activation_f(self.memory['Z'], derivative=True)
         w_grad = np.dot(self.memory['Input'].T, previous_derivative * da_dz)
         b_grad = np.sum(da_dz * previous_derivative, axis=0)
         self.weights += -self.learning_rate * w_grad
@@ -138,7 +133,7 @@ layers_in = [
             {'input': 8, 'output': 3, 'activation_f': utils.softmax}
             ]
 
-nn = NeuralNetwork(layers_in, epochs=1, learning_rate=0.001)
+nn = NeuralNetwork(layers_in, epochs=100, learning_rate=0.0001)
 nn.train(X_train, Y_train, X_test, Y_test)
 print(f'Accuracy score: {nn.predict()}')
 nn.plot_loss()
