@@ -1,9 +1,11 @@
 import numpy as np
+from numpy.random import seed
 from sklearn.model_selection import train_test_split
 from sklearn import datasets
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import utils
+seed(123)
 
 
 def create(layers):
@@ -37,19 +39,15 @@ class Layer:
         self.n_neurons = n_neurons
         self.activation_f = activation_f
         self.memory = {}
-        self.weights = np.random.uniform(low=-1, high=1, size=(self.input + 1, self.n_neurons))
+        self.weights = np.random.uniform(low=-1, high=1, size=(self.input, self.n_neurons))
         self.bias = np.zeros(self.n_neurons)
-        self.learning_rate = 0.01
+        self.learning_rate = 0.0001
 
     def forward(self, x, last_layer=False):
         self.memory['Input'] = x
         self.memory['Z'] = np.dot(self.memory['Input'], self.weights)
-        if last_layer:
-            self.memory['Activation'] = self.activation_f(self.memory['Z'])
-            return self.memory['Activation']
-        else:
-            self.memory['Activation'] = utils.transform_bias(self.activation_f(self.memory['Z']))
-            return self.memory['Activation']
+        self.memory['Activation'] = self.activation_f(self.memory['Z'])
+        return self.memory['Activation']
 
     def backward(self, previous_derivative, req_delta=False):
         da_dz = self.activation_f(self.memory['Z'], derivative=True)
@@ -58,7 +56,7 @@ class Layer:
         self.weights += -self.learning_rate * w_grad
         self.bias += -self.learning_rate * b_grad
 
-        return np.dot(previous_derivative * da_dz, self.weights.T[:,:-1]) if req_delta else None
+        return np.dot(previous_derivative * da_dz, self.weights.T) if req_delta else None
 
 
 class NeuralNetwork:
@@ -96,18 +94,19 @@ class NeuralNetwork:
         """
         Forward propagation through every layer.
         """
-        '''
+
         for layer in self.layers:
             x = layer.forward(x)
+        return x
         '''
-
         for index in range(len(self.layers)):
             if index == len(self.layers) - 1:
                 x = self.layers[index].forward(x, last_layer=True)
-                return x
+                break
             else:
                 x = self.layers[index].forward(x, last_layer=False)
-
+        return x
+        '''
 
     def backpropagation(self, tmp_derivative):
         """
@@ -138,17 +137,27 @@ class NeuralNetwork:
 ldr = utils.DatasetLoader(dataset=datasets.load_iris(), multiclass_flag=True)
 multiclass, X, y = ldr.run()
 X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
-X_train = utils.transform_bias(X_train)
-X_test = utils.transform_bias(X_test)
 
+'''
 layers_in = [
-            {'input': 4, 'output': 16, 'activation_f': utils.tanh},
-            {'input': 16, 'output': 8, 'activation_f': utils.tanh},
+            {'input': 4, 'output': 8, 'activation_f': utils.tanh},
             {'input': 8, 'output': 3, 'activation_f': utils.softmax}
             ]
 
-nn = NeuralNetwork(layers_in, epochs=100, learning_rate=0.0001)
+nn = NeuralNetwork(layers_in, epochs=100, learning_rate=0.01)
 nn.train(X_train, Y_train, X_test, Y_test)
 print(f'Accuracy score: {nn.predict()}')
 nn.plot_loss()
+'''
+l1 = Layer(4, 16, utils.tanh)
+l2 = Layer(16, 8, utils.tanh)
+l3 = Layer(8, 3, utils.softmax)
 
+for _ in range(100):
+    prediction = l3.forward(l2.forward(l1.forward(X_train)))
+    l1.backward(l2.backward(l3.backward(utils.loss_derivative(Y_train, prediction), req_delta=True), req_delta=True))
+
+predicted_values_test = l3.forward(l2.forward(l1.forward(X_test)))
+print(predicted_values_test)
+prediction_test = utils.accuracy(predicted_values_test, Y_test)
+print(prediction_test)
