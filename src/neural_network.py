@@ -121,9 +121,9 @@ class NeuralNetwork:
         for idx in range(len(self.layers) - 1, -1, -1):
             tmp_derivative = self.layers[idx].backward(tmp_derivative, idx != 0)
 
-    def calculate_accuracy(self, x, y):
-        y_predicted = np.argmax(self.propagation(x), axis=1)
-        return utils.accuracy(y_predicted, y)
+    def calculate_accuracy(self, prediction, true_y):
+        y_predicted = np.argmax(self.propagation(prediction), axis=1)
+        return utils.accuracy(y_predicted, true_y)
 
     def plot_loss(self):
         """
