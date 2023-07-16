@@ -69,8 +69,7 @@ class NeuralNetwork:
         self.epochs = epochs
         self.layers = set_lr(learning_rate, create(layers))
 
-        self.X_train, self.y_train, self.X_test, self.y_test, self.X_val, self.y_val = None, None, None, None, None, \
-            None
+        self.X_train = self.y_train = self.X_test = self.y_test = self.X_val = self.y_val = None
 
     def train(self, x_train, y_train, x_test, y_test, x_val, y_val):
         """
@@ -121,9 +120,9 @@ class NeuralNetwork:
         for idx in range(len(self.layers) - 1, -1, -1):
             tmp_derivative = self.layers[idx].backward(tmp_derivative, idx != 0)
 
-    def calculate_accuracy(self, x, y):
-        y_predicted = np.argmax(self.propagation(x), axis=1)
-        return utils.accuracy(y_predicted, y)
+    def calculate_accuracy(self, prediction, true_y):
+        y_predicted = np.argmax(self.propagation(prediction), axis=1)
+        return utils.accuracy(y_predicted, true_y)
 
     def plot_loss(self):
         """
@@ -148,6 +147,13 @@ class NeuralNetwork:
         plt.legend()
 
         plt.tight_layout()
+
+        for training_accuracy, validation_accuracy in zip(
+            self.training_accuracy_history, self.validation_accuracy_history
+        ):
+            print(f'Training accuracy: {training_accuracy * 100:.2f}%, '
+                  f'Validation accuracy: {validation_accuracy * 100:.2f}%')
+
         plt.show()
 
 
@@ -156,11 +162,14 @@ multiclass, X, y = ldr.run()
 X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 X_train, X_val, Y_train, Y_val = train_test_split(X_train, Y_train, test_size=0.125, random_state=1234)
 
-layers_in = [{'input': 4, 'output': 128, 'activation_f': utils.tanh},
-             {'input': 128, 'output': 64, 'activation_f': utils.tanh},
-             {'input': 64, 'output': 3, 'activation_f': utils.softmax}]
 
-nn = NeuralNetwork(layers_in, epochs=60, learning_rate=0.0001)
+layers_in = [
+            {'input': 4, 'output': 128, 'activation_f': utils.tanh},
+            {'input': 128, 'output': 64, 'activation_f': utils.tanh},
+            {'input': 64, 'output': 3, 'activation_f': utils.softmax},
+            ]
+
+nn = NeuralNetwork(layers_in, epochs=100, learning_rate=1e-4)
 nn.train(X_train, Y_train, X_test, Y_test, X_val, Y_val)
-print(f'Accuracy score: {nn.calculate_accuracy(X_test, Y_test)}')
+print(f'Model accuracy: {nn.calculate_accuracy(X_test, Y_test) * 100:.2f}%')
 nn.plot_loss()

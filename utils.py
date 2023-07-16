@@ -24,15 +24,36 @@ def softmax(z, derivative=False):
         return e_z / np.sum(e_z, axis=1, keepdims=True)
 
 
-def softmax_derivative(z):
-    return softmax(z) * (1 - softmax(z))
+def softmax_derivative(s):
+    return softmax(s) * (1 - softmax(s))
 
+
+'''
+def softmax_derivative(dvalues, prediction):
+    derivative = np.empty_like(dvalues)
+
+    for index, (single_output, single_dvalues) in enumerate(zip(prediction, dvalues)):
+        single_output = single_output.reshape(-1, 1)
+        jacobian_matrix = np.diagflat(single_output) - np.dot(single_output, single_output.T)
+        derivative[index] = np.dot(jacobian_matrix, single_dvalues)
+
+    return derivative
+'''
 
 def categorical_cross_entropy_loss(y_hat, y, derivative=False):
     if derivative:
-        return loss_derivative(y_hat, y)
+        return loss_derivative(y, y_hat)
     else:
         return -np.multiply(y, np.argmax(np.log(y_hat), axis=1))
+
+
+def loss(a, y, derivative=False):
+    if derivative:
+        loss_derivative(y, a)
+    else:
+        n_samples = y.shape[0]
+        y_one_hot = get_one_hot(y)
+        return (-1 / n_samples) * np.sum(np.multiply(y_one_hot, np.log(a)))
 
 
 def loss_derivative(y, y_hat):
@@ -85,6 +106,7 @@ def loss(a, y):
     return (-1 / n_samples) * np.sum(np.multiply(y_one_hot, np.log(a)))
 
 
+
 def find_max_output(output):
     m, index = output[0], 0
     for i in range(1, len(output)):
@@ -104,4 +126,4 @@ def transform_bias(a):
     :return: New matrix with one column shape + 1.
     """
     ones_to_x = np.ones((a.shape[0], 1))
-    return np.concatenate([ones_to_x, a], axis=1)
+    return np.concatenate([a, ones_to_x], axis=1)

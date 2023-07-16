@@ -6,8 +6,10 @@ ___
 
 Solving this problem requires two ways of implementation, based on output (if its binary or multiclass classification). After 1000 epochs, and learning rate of 0.01, algorithm accuracy is about 96%.
 
-![Grafik loss funkcije](docs/assets/Plot1.png)
+![Loss functions](docs/assets/Plot1.png)
 ___
 ## Neural Network
 
-To be continued...
+Requires little bit more complex neural network to get 100% accuracy. 3 layers, with 128, 64, 3 neurons in each layer.
+
+![Loss and accuracy](docs/assets/Plot2.png)
