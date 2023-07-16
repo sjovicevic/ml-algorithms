@@ -79,8 +79,9 @@ def get_one_hot(z):
     return np.array(pd.get_dummies(z, dtype='int8'))
 
 
-def loss(a, y, n_samples):
+def loss(a, y):
     y_one_hot = get_one_hot(y)
+    n_samples = a.shape[0]
     return (-1 / n_samples) * np.sum(np.multiply(y_one_hot, np.log(a)))
 
 
